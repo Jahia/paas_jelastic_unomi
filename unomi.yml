@@ -81,8 +81,8 @@ actions:
   setupUnomi:
     - updateHazelcast
     - ForEach(nodes.unomi):
-      api: env.control.ExecDockerRunCmd
-      nodeId: ${@i.id}
+        api: env.control.ExecDockerRunCmd
+        nodeId: ${@i.id}
 
   setupDatadogAgentUnomi:
     - if (settings.mode == 'production'):
