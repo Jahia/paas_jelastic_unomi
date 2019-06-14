@@ -27,7 +27,7 @@ nodes:
     displayName: Unomi
     count: 1
     cloudlets: 32
-    nodeGroup: unomi
+    nodeGroup: cp
     links: es:es
     startServiceOnCreation: false
     env:
@@ -71,7 +71,7 @@ onBeforeScaleIn[unomi]: updateHazelcast
 # -- Actions --
 actions:
   updateHazelcast:
-    - cmd[unomi]: |-
+    - cmd[cp]: |-
         sed -i "/<interface>/d" $HAZELCAST_CONFIG
         sed -i "/<member>node/d" $HAZELCAST_CONFIG
         sed -i "2i export UNOMI_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" /etc/init.d/karaf-service
@@ -80,7 +80,7 @@ actions:
 
   setupUnomi:
     - updateHazelcast
-    - ForEach(nodes.unomi):
+    - ForEach(nodes.cp):
         api: env.control.ExecDockerRunCmd
         nodeId: ${@i.id}
 
