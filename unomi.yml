@@ -146,17 +146,17 @@ actions:
 
 settings:
 	fields:
-		- name: mode
-			type: radio-fieldset
-			caption: Operating Mode
-			values:
-				production: production
-				development: development
-			default: production
-			showIf:
-				production:
-					- name: ddogApikey
-						type: string
-						caption: Datadog API KEY
-						required: true
-						vtype: text
+    - name: mode
+      type: radio-fieldset
+      caption: Operating Mode
+      values:
+        production: production
+        development: development
+      default: production
+      showIf:
+        production:
+          - name: ddogApikey
+            type: string
+            caption: Datadog API KEY
+            required: true
+            vtype: text
