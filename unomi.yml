@@ -1,5 +1,5 @@
 ---
-type: update
+type: install
 version: 1.5.2
 name: Jahia - Unomi
 logo: /images/jahia-logo-70x70.png
@@ -160,3 +160,8 @@ settings:
             caption: Datadog API KEY
             required: true
             vtype: text
+    - name: shortdomain
+      type: envlist
+      caption: Target Env
+      required: true
+
