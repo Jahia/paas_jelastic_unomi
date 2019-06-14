@@ -56,7 +56,7 @@ onUninstall:
 
 onInstall:
   - setupUnomi
-  - setupDatadogAgentUnomi: unomi
+  - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
 
 
@@ -78,11 +78,14 @@ actions:
         sed -i "2i export UNOMI_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" /etc/init.d/karaf-service
         sed -i "2i export UNOMI_HAZELCAST_TCPIP_MEMBERS=unomi" /etc/init.d/karaf-service
 
+  execdockrun:
+    forEach(nodes.cp):
+      api: env.control.ExecDockerRunCmd
+      nodeId: ${@i.id}
+
   setupUnomi:
     - updateHazelcast
-    - ForEach(nodes.cp):
-        api: env.control.ExecDockerRunCmd
-        nodeId: ${@i.id}
+    - execdockrun
 
   setupDatadogAgentUnomi:
     - if (settings.mode == 'production'):
@@ -160,8 +163,3 @@ settings:
             caption: Datadog API KEY
             required: true
             vtype: text
-    - name: shortdomain
-      type: envlist
-      caption: Target Env
-      required: true
-
