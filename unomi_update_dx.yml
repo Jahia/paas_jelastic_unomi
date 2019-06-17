@@ -51,6 +51,10 @@ actions:
 # -- Settings --
 settings:
   fields:
+    - name: unomidns
+      type: string
+      caption: Unomi DNS to use
+      required: true
     - name: mfversion
       type: list
       caption: MF module version
