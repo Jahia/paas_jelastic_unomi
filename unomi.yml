@@ -147,6 +147,15 @@ actions:
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
             systemctl restart datadog-agent
 
+  updateDX:
+    - install:
+        jps: ${baseUrl}/unomi_update_dx.yml
+        # shortdomain: ${settings.shortdomain}
+        # region: ${settings.envRegion}
+        settings:
+          unomidns: ${env.domain}
+          mfversion: ${settings.mfversion}
+
 settings:
   fields:
     - name: mode
@@ -163,3 +172,16 @@ settings:
             caption: Datadog API KEY
             required: true
             vtype: text
+    - name: unomidns
+      type: string
+      caption: Unomi DNS to use
+      required: true
+    - name: mfversion
+      type: list
+      caption: MF module version
+      values:
+        value1: v1.10.0
+        value2: v1.10.1
+        value3: v1.10.2
+      default: v1.10.2
+      editable: true
