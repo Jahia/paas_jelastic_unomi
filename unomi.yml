@@ -150,7 +150,7 @@ actions:
 
   updateDX:
     - install:
-        jps: ${baseUrl}/unomi_update_dx.yml
+        jps: ${baseUrl}/unomi_update_dx.yml?_${fn.random}
         # shortdomain: ${settings.shortdomain}
         # region: ${settings.envRegion}
         settings:
