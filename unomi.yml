@@ -58,8 +58,6 @@ onInstall:
   - setupUnomi
   - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
-  - updateDX
-
 
 onAfterServiceScaleOut[unomi]:
   forEach(event.response.nodes):
@@ -180,10 +178,10 @@ settings:
             caption: Datadog API KEY
             required: true
             vtype: text
-    - name: dxenv
-      type: envlist
-      caption: DX env for MF installation
-      required: true
+    # - name: dxenv
+    #   type: envlist
+    #   caption: DX env for MF installation
+    #   required: true
     - name: mfversion
       type: list
       caption: MF module version
