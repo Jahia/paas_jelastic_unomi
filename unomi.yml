@@ -151,7 +151,7 @@ actions:
   updateDX:
     - install:
         jps: ${baseUrl}/unomi_update_dx.yml?_${fn.random}
-        # shortdomain: ${settings.shortdomain}
+        shortdomain: ${settings.dxenv}
         # region: ${settings.envRegion}
         settings:
           unomidns: ${env.domain}
@@ -173,6 +173,10 @@ settings:
             caption: Datadog API KEY
             required: true
             vtype: text
+    - name: dxenv
+      type: envlist
+      caption: DX env for MF installation
+      required: true
     - name: mfversion
       type: list
       caption: MF module version
