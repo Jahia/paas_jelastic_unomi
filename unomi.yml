@@ -58,6 +58,7 @@ onInstall:
   - setupUnomi
   - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
+  - updateDX
 
 
 onAfterServiceScaleOut[unomi]:
