@@ -154,6 +154,7 @@ actions:
         shortdomain: ${settings.dxenv}
         # region: ${settings.envRegion}
         settings:
+          shortdomain: ${settings.dxenv}
           unomidns: ${env.domain}
           mfversion: ${settings.mfversion}
 
