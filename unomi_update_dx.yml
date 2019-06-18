@@ -45,7 +45,6 @@ actions:
         chown tomcat:tomcat /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar
-        service tomcat restart
 
 
 # -- Settings --

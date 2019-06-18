@@ -59,12 +59,12 @@ onInstall:
   - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
 
-onAfterServiceScaleOut[unomi]:
+onAfterServiceScaleOut[cp]:
   forEach(event.response.nodes):
     - setupDatadogAgentPerNodeUnomi: ${@i.id}
 
-onBeforeServiceScaleOut[unomi]: updateHazelcast
-onBeforeScaleIn[unomi]: updateHazelcast
+onBeforeServiceScaleOut[cp]: updateHazelcast
+onBeforeScaleIn[cp]: updateHazelcast
 
 
 # -- Actions --
