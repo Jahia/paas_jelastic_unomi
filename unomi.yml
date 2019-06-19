@@ -55,6 +55,11 @@ onUninstall:
   user: root
 
 onInstall:
+  - environment.control.ApplyNodeGroupData [cp, es]:
+      data:
+        productName: unomi
+        productVersion: ${globals.unomi_version}
+        packageType: ${globals.package_type}
   - setupUnomi
   - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
