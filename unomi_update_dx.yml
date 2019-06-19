@@ -23,6 +23,13 @@ skipNodeEmails: true
 
 # --Events --
 onInstall:
+  - script: |
+      return {"result": 0, "output": "${settings.unomidns}".split('.', 1)};
+  - setGlobals:
+      unomi_env_name: ${response.output}
+  - environment.control.ApplyNodeGroupData [proc, cp]:
+      data:
+        envLink: ${globals.unomi_env_name}
   - updateDX: proc
   - updateDX: cp
 
