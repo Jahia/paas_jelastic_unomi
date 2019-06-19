@@ -30,6 +30,7 @@ onInstall:
   - environment.control.ApplyNodeGroupData [proc, cp]:
       data:
         envLink: ${globals.unomi_env_name}
+  - allowIP
   - updateDX: proc
   - updateDX: cp
 
@@ -53,6 +54,41 @@ actions:
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar
 
+  allowIP:
+    - script: |
+        var resp = jelastic.env.control.GetEnvInfo('${env.envName}', session);
+        if (resp.result != 0) return resp;
+        var ipadd = [];
+        for (var i = 0, n = resp.nodes; i < n.length; i++) {
+          var dockername = n[i].customitem.dockerName.split('/')[1];
+          if (dockername == 'processing' || dockername == 'browsing') {
+            ipadd.push(n[i].address);
+          };
+          //ipadd.push(dockername);
+        };
+        return {"result": 0,
+          "out": ipadd.toString()
+        };
+    - setGlobals:
+        ipadd_to_allow: ${response.out}
+    - log: "## these ip addresses should be allowed for unomi: ${globals.ipadd_to_allow}"
+    - script: |
+        var resp = jelastic.env.control.AddContainerEnvVars('${globals.unomi_env_name}',
+          session,
+          nodeGroup='cp',
+          vars={'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES': '${globals.ipadd_to_allow}'}
+        );
+        if (resp.result != 0) return resp;
+        return {"result": 0}
+    - log: "## 'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES=${globals.ipadd_to_allow}' set in unomi nodes"
+    - script: |
+        var resp = jelastic.env.control.RestartNodes('${globals.unomi_env_name}',
+          session,
+          nodeGroup='cp'
+        );
+        if (resp.result != 0) return resp;
+        return {"result": 0}
+    - log: "## unomi nodes get order to restart"
 
 # -- Settings --
 settings:
