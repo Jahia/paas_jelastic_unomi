@@ -61,8 +61,9 @@ onInstall:
         productVersion: ${globals.unomi_version}
         packageType: ${globals.package_type}
   - setupUnomi
-  - setupDatadogAgentUnomi: cp
-  - setupDatadogAgentEs: es
+  - if ( '${settings.mode}' == 'production' ):
+      - setupDatadogAgentUnomi: cp
+      - setupDatadogAgentEs: es
 
 onAfterServiceScaleOut[cp]:
   forEach(event.response.nodes):
