@@ -23,13 +23,10 @@ skipNodeEmails: true
 
 # --Events --
 onInstall:
-  - script: |
-      return {"result": 0, "output": "${settings.unomidns}".split('.', 1)};
-  - setGlobals:
-      unomi_env_name: ${response.output}
+  - setNGData
   - environment.control.ApplyNodeGroupData [proc, cp]:
       data:
-        envLink: ${globals.unomi_env_name}
+        envLink: ${settings.unomienv}
   - allowIP
   - updateDX: proc
   - updateDX: cp
@@ -54,6 +51,34 @@ actions:
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar
 
+  setNGData:
+    - script: |
+        var resp = jelastic.env.control.GetNodeGroups('${settings.unomienv}', session);
+        for (var i = 0, g = resp.object; i < g.length; i++) {
+          if (g[i].name == 'cp' && 'envLink' in g[i]) {
+            var actual_envLink = g[i].envLink;
+            if (actual_envLink.indexOf('${env.shortdomain}') >= 0) {
+              envLinkToSet = actual_envLink;
+            } else {
+                envLinkToSet = actual_envLink + ',' + '${env.shortdomain}';
+              };
+          } else {
+              envLinkToSet = '${env.shortdomain}';
+            };
+        };
+        return {'result': 0, 'envLinkToSet': envLinkToSet, 'response': resp};
+    - set:
+        envLinkToSet: ${response.envLinkToSet}
+    - log: "## this DX appid will now be set to cp node(s) in the Unomi env: ${this.envLinkToSet}"
+    - script: |
+        var resp = jelastic.env.control.ApplyNodeGroupData('${settings.unomienv}', session,
+          nodeGroup='cp',
+          data={'envLink': '${this.envLinkToSet}'}
+        );
+        if (resp.result != 0) return resp;
+        var new_prop = jelastic.env.control.GetNodeGroups('${settings.unomienv}', session);
+          return {'result': new_prop.result, 'new_prop': new_prop};
+
   allowIP:
     - script: |
         var resp = jelastic.env.control.GetEnvInfo('${env.envName}', session);
@@ -73,7 +98,7 @@ actions:
         ipadd_to_allow: ${response.out}
     - log: "## these ip addresses should be allowed for unomi: ${globals.ipadd_to_allow}"
     - script: |
-        var resp = jelastic.env.control.AddContainerEnvVars('${globals.unomi_env_name}',
+        var resp = jelastic.env.control.AddContainerEnvVars('${settings.unomienv}',
           session,
           nodeGroup='cp',
           vars={'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES': '${globals.ipadd_to_allow}'}
@@ -82,7 +107,7 @@ actions:
         return {"result": 0}
     - log: "## 'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES=${globals.ipadd_to_allow}' set in unomi nodes"
     - script: |
-        var resp = jelastic.env.control.RestartNodes('${globals.unomi_env_name}',
+        var resp = jelastic.env.control.RestartNodes('${settings.unomienv}',
           session,
           nodeGroup='cp'
         );
@@ -93,10 +118,11 @@ actions:
 # -- Settings --
 settings:
   fields:
-    - name: unomidns
-      type: string
-      caption: Unomi DNS to use
+    - name: unomienv
+      type: envlist
+      caption: Targeted Unomi env
       required: true
+      valueField: shortdomain
     - name: mfversion
       type: list
       caption: MF module version
