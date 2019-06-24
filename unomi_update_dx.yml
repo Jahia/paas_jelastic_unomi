@@ -55,7 +55,7 @@ actions:
     - script: |
         var resp = jelastic.env.control.GetNodeGroups('${settings.unomienv}', session);
         for (var i = 0, g = resp.object; i < g.length; i++) {
-          if (g[i].name == 'cp' && 'envLink' in g[i]) {
+          if (g[i].name == 'cp' && g[i].hasOwnProperty('envLink')) {
             var actual_envLink = g[i].envLink;
             if (actual_envLink.indexOf('${env.shortdomain}') >= 0) {
               envLinkToSet = actual_envLink;
