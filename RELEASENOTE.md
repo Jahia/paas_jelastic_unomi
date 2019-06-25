@@ -1,6 +1,12 @@
 # Release note
 
-## actual version: v1.1
+## actual version: v1.2
+
+### v1.2 (2019-06-25)
+* [BUG] in `unomi_package_dx.yml`, action `updateDX` was still using old settings `unomidns`
+    * add a new action `getUnomiDNS` which set a new global `unomidns`
+    * now `updateDX` is using this new global
+
 
 ### v1.1 (2019-06-24)
 * revamp the Unomi targetting:

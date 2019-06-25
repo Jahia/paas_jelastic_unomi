@@ -11,7 +11,7 @@ description:
     designed to manage customers, leads and visitors data and help personalize
     customers experiences while also offering features to respect visitor
     privacy rules (such as GDPR).
-baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.1
+baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.2
 globals:
   shortdomain: ${settings.shortdomain}
   package_type: dev
@@ -25,6 +25,7 @@ onInstall:
       data:
         envLink: ${settings.unomienv}
   - allowIP
+  - getUnomiDNS
   - updateDX: proc
   - updateDX: cp
 
@@ -39,11 +40,18 @@ onBeforeScaleIn[unomi]: updateHazelcast
 
 # -- Actions --
 actions:
+  getUnomiDNS:
+    - script: |
+        var resp = jelastic.env.control.GetEnvInfo('${settings.unomienv}', session);
+        return {'result': 0, 'domain': resp.env.domain};
+    - setGlobals:
+        unomidns: ${response.domain}
+
   updateDX:
     - cmd[${this}]: |-
         sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         wget -O /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg ${baseUrl}/common/org.jahia.modules.marketingfactory.settings-mf.cfg
-        sed -i 's!\(mf.unomiURL= http://\).*!\1${settings.unomidns}!' /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
+        sed -i 's!\(mf.unomiURL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         chown tomcat:tomcat /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar
@@ -89,10 +97,10 @@ actions:
           //ipadd.push(dockername);
         };
         return {"result": 0,
-          "out": ipadd.toString()
+          "ipadd": ipadd.toString()
         };
     - setGlobals:
-        ipadd_to_allow: ${response.out}
+        ipadd_to_allow: ${response.ipadd}
     - log: "## these ip addresses should be allowed for unomi: ${globals.ipadd_to_allow}"
     - script: |
         var resp = jelastic.env.control.AddContainerEnvVars('${settings.unomienv}',
