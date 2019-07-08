@@ -1,6 +1,11 @@
-# Release note
+# Unomi Release notes
 
-## actual version: v1.2
+## actual version: v1.3
+
+### v1.3 (2019-07-08)
+* [NEW] Add _Unomi_ license key as a setting in `unomi_update_dx`
+    * this setting is mandatory
+    * have to be base64
 
 ### v1.2 (2019-06-25)
 * [BUG] in `unomi_package_dx.yml`, action `updateDX` was still using old settings `unomidns`

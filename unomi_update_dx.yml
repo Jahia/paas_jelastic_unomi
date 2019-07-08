@@ -52,6 +52,7 @@ actions:
         sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         wget -O /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg ${baseUrl}/common/org.jahia.modules.marketingfactory.settings-mf.cfg
         sed -i 's!\(mf.unomiURL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
+        sed -i "s,^\# \(mf\.unomiKey=\),\1$(echo $k|base64 -d)," /common/org.jahia.modules.marketingfactory.settings-mf.cfg
         chown tomcat:tomcat /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar
@@ -137,3 +138,7 @@ settings:
         value3: 1.10.2
       default: 1.10.2
       editable: true
+    - name: unomikey
+      type: string
+      caption: Unomi Key
+      required: true
