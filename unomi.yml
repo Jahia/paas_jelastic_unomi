@@ -95,7 +95,7 @@ onInstall:
         productVersion: ${globals.unomi_version}
         packageType: ${globals.package_type}
   - env.control.AddContainerEnvVars [*]:
-      vars: {"envName": "${env.envName}"}
+    vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
   - setupUnomi
   - if ( '${settings.mode}' == 'production' ):
       - setupDatadogAgentUnomi: cp
