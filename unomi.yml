@@ -15,6 +15,7 @@ baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.5
 globals:
   datadog_key: ${settings.ddogApikey}
   shortdomain: ${settings.shortdomain}
+  envname: ${env.envName}
   unomi_version: ${settings.unomiVersion}
   es_version: 5.6.3
   package_type: dev
@@ -43,7 +44,7 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${globals.shortdomain}',
+      envName: '${globals.envname}',
       _ROLE: 'unomi',
       _PROVIDE: 'elasticsearch',
       ES_VERSION: esVersion,
@@ -63,7 +64,7 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${globals.shortdomain}',
+      envName: '${globals.envname}',
       UNOMI_HTTP_PORT: '80',
       UNOMI_ELASTICSEARCH_ADDRESSES: 'es:9300',
       UNOMI_ELASTICSEARCH_CLUSTERNAME: 'jahia-dx',
