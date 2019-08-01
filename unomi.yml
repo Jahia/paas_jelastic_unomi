@@ -11,7 +11,7 @@ description:
     designed to manage customers, leads and visitors data and help personalize
     customers experiences while also offering features to respect visitor
     privacy rules (such as GDPR).
-baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.4
+baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.5
 globals:
   datadog_key: ${settings.ddogApikey}
   shortdomain: ${settings.shortdomain}
@@ -42,6 +42,11 @@ onBeforeInstall: |
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
+      envName: '${env.envName}',
+      _ROLE: 'unomi',
+      _PROVIDE: 'elasticsearch',
+      ES_VERSION: esVersion,
+      envmode: '${settings.mode}'
     }
   }
 
@@ -56,9 +61,14 @@ onBeforeInstall: |
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
+      envName: '${env.envName}',
       UNOMI_HTTP_PORT: '80',
       UNOMI_ELASTICSEARCH_ADDRESSES: 'es:9300',
       UNOMI_ELASTICSEARCH_CLUSTERNAME: 'jahia-dx'
+      _ROLE: 'unomi',
+      _PROVIDE: 'unomi',
+      ES_VERSION: esVersion,
+      envmode: '${settings.mode}'
     }
   }
 
@@ -121,13 +131,14 @@ actions:
             echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
             sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
             echo "tags:" >> /etc/datadog-agent/datadog.yaml
-            echo " - client:jahiacloud" >> /etc/datadog-agent/datadog.yaml
-            echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
             echo " - envname:${env.envName}" >> /etc/datadog-agent/datadog.yaml
-            echo " - role:unomi" >> /etc/datadog-agent/datadog.yaml
-            systemctl restart datadog-agent
+            wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
+            wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
+            chmod u+x /usr/local/bin/set_dd_tags.sh
+            /usr/local/bin/set_dd_tags.sh
+            systemctl restart crond datadog-agent
 
   setupDatadogAgentEs:
     - if (settings.mode == 'production'):
@@ -137,12 +148,9 @@ actions:
             echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
             sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
             echo "tags:" >> /etc/datadog-agent/datadog.yaml
-            echo " - client:jahiacloud" >> /etc/datadog-agent/datadog.yaml
-            echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
             echo " - envname:${env.envName}" >> /etc/datadog-agent/datadog.yaml
-            echo " - role:elasticsearch" >> /etc/datadog-agent/datadog.yaml
             wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
             chmod 755 /var/log/elasticsearch/
             chmod 755 /var/log/elasticsearch/*.log -R
@@ -162,7 +170,11 @@ actions:
             echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
             echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
             echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            systemctl restart datadog-agent
+            wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
+            wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
+            chmod u+x /usr/local/bin/set_dd_tags.sh
+            /usr/local/bin/set_dd_tags.sh
+            systemctl restart crond datadog-agent
 
   setupDatadogAgentPerNodeUnomi:
     - if (settings.mode == 'production'):

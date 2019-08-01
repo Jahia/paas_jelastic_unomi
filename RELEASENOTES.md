@@ -1,6 +1,11 @@
 # Unomi Release notes
 
-## actual version: v1.4
+## actual version: v1.5
+
+### v1.5 (2019-08-01)
+* [IMPROVEMENT]: more tags added for datadog-agents
+    * and add a set_dd_tags.sh for using `/metadata_from_HOST` file for it
+
 
 ### v1.4 (2019-07-24)
 * [IMPROVEMENT] they were no Datadog tags for `envname` and `role`
