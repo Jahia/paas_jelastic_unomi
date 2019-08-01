@@ -125,7 +125,7 @@ actions:
             echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - envname:${env.envname}" >> /etc/datadog-agent/datadog.yaml
+            echo " - envname:${env.envName}" >> /etc/datadog-agent/datadog.yaml
             echo " - role:unomi" >> /etc/datadog-agent/datadog.yaml
             systemctl restart datadog-agent
 
@@ -141,7 +141,7 @@ actions:
             echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - envname:${env.envname}" >> /etc/datadog-agent/datadog.yaml
+            echo " - envname:${env.envName}" >> /etc/datadog-agent/datadog.yaml
             echo " - role:elasticsearch" >> /etc/datadog-agent/datadog.yaml
             wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
             chmod 755 /var/log/elasticsearch/

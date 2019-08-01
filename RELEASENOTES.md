@@ -4,7 +4,7 @@
 
 ### v1.4 (2019-07-24)
 * [IMPROVEMENT] they were no Datadog tags for `envname` and `role`
-    * now a tag `envname:${env.envname}` is added to Datadog agent
+    * now a tag `envname:${env.envName}` is added to Datadog agent
     * now a tag `role:(unomi|elasticsearch)` is added to Datadog agent
 
 ### v1.3 (2019-07-08)
