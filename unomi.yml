@@ -135,7 +135,6 @@ actions:
             echo "tags:" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - envname:${globals.shortdomain}" >> /etc/datadog-agent/datadog.yaml
             echo " - provide:unomi" >> /etc/datadog-agent/datadog.yaml
             wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
             wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
@@ -153,7 +152,6 @@ actions:
             echo "tags:" >> /etc/datadog-agent/datadog.yaml
             echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - envname:${globals.shortdomain}" >> /etc/datadog-agent/datadog.yaml
             echo " - provide:elasticsearch" >> /etc/datadog-agent/datadog.yaml
             wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
             chmod 755 /var/log/elasticsearch/
