@@ -25,7 +25,7 @@ onInstall:
       data:
         envLink: ${settings.unomienv}
   - allowIP
-  - getUnomiDNS
+  - getUnomiDNSandPwd
   - updateDX: proc
   - updateDX: cp
 
@@ -40,12 +40,20 @@ onBeforeScaleIn[unomi]: updateHazelcast
 
 # -- Actions --
 actions:
-  getUnomiDNS:
+  getUnomiDNSandPwd:
     - script: |
-        var resp = jelastic.env.control.GetEnvInfo('${settings.unomienv}', session);
-        return {'result': 0, 'domain': resp.env.domain};
+        var resp = jelastic.env.control.GetEnvInfo('${settings.unomienv}', session)
+        for (var i = 0, g = resp.nodes; i < g.length; i++) {
+          if (g[i].nodeGroup == "cp") {
+            var unomi_nodeid = g[i].id
+            break
+          }
+        }
+        var unomi_pwd = jelastic.env.control.GetContainerEnvVars('${settings.unomienv}', session, unomi_nodeid)
+        return {'result': 0, 'domain': resp.env.domain, 'unomi_pwd': unomi_pwd}
     - setGlobals:
         unomidns: ${response.domain}
+        unomi_pwd: ${response.unomi_pwd}
 
   updateDX:
     - cmd[${this}]: |-
@@ -53,6 +61,7 @@ actions:
         wget -O /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg ${baseUrl}/common/org.jahia.modules.marketingfactory.settings-mf.cfg
         sed -i 's!\(mf.unomiURL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         sed -i "s,^\# \(mf\.unomiKey=\),\1$(echo $k|base64 -d)," /common/org.jahia.modules.marketingfactory.settings-mf.cfg
+        sed -i "s/\(mf.unomiPassword=\)karaf/\1${globals.unomi_pwd}/" /common/org.jahia.modules.marketingfactory.settings-mf.cfg
         chown tomcat:tomcat /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
         wget -O /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/${settings.mfversion}/marketing-factory-core-${settings.mfversion}.jar
         chown tomcat:tomcat /data/digital-factory-data/modules/marketing-factory-core-${settings.mfversion}.jar

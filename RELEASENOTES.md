@@ -6,7 +6,8 @@
 * [IMPROVEMENT]: more tags added for datadog-agents
     * and add a set_dd_tags.sh for using `/metadata_from_HOST` file for it
 * [IMPROVEMENT]: set a random password to access unomi
-    * by setting a new envvar `UNOMI_ROOT_PASSWORD`
+    * by setting a new envvar `UNOMI_ROOT_PASSWORD` on unomi mode (in `unomi.yml`)
+    * get this variable and use it in DX's file `org.jahia.modules.marketingfactory.settings-mf.cfg` (in `unomi_update_dx.yml`)
 
 
 ### v1.4 (2019-07-24)
