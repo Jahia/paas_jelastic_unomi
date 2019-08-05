@@ -19,6 +19,7 @@ globals:
   unomi_version: ${settings.unomiVersion}
   es_version: 5.6.3
   package_type: dev
+  unomi_root_password: ${fn.password(20)}
   # dx_version: ${settings.dxVersion}
 ssl: true
 skipNodeEmails: true
@@ -63,6 +64,7 @@ onBeforeInstall: |
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
+      UNOMI_ROOT_PASSWORD: ${globals.unomi_root_password},
       jahia_cfg_operatingMode: '${settings.mode}',
       envName: '${globals.envname}',
       UNOMI_HTTP_PORT: '80',
