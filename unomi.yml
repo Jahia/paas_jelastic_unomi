@@ -142,7 +142,7 @@ actions:
             echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
             echo " - provide:unomi" >> /etc/datadog-agent/datadog.yaml
             wget -O /etc/datadog-agent/conf.d/jmx.d/conf.yaml ${baseUrl}/configs/dd_jmx_unomi_conf.yaml
-            sed -i "s/\(password: \)/\1${globals.unomi_root_password}" /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+            sed -i 's/\(password: \)/\1${globals.unomi_root_password}' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
             wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
             wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
             chmod u+x /usr/local/bin/set_dd_tags.sh
