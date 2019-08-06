@@ -50,7 +50,7 @@ actions:
           }
         }
         var unomi_pwd = jelastic.env.control.GetContainerEnvVars('${settings.unomienv}', session, unomi_nodeid)
-        return {'result': 0, 'domain': resp.env.domain, 'unomi_pwd': unomi_pwd}
+        return {'result': 0, 'domain': resp.env.domain, 'unomi_pwd': unomi_pwd['object']['UNOMI_ROOT_PASSWORD']}
     - setGlobals:
         unomidns: ${response.domain}
         unomi_pwd: ${response.unomi_pwd}
