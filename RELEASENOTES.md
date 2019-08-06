@@ -2,10 +2,15 @@
 
 ## actual version: v1.5
 
-### v1.5 (2019-08-01)
-* [IMPROVEMENT]: more tags added for datadog-agents
+### v1.5 (2019-08-06)
+* [IMPROVEMENT] more tags added for datadog-agents
     * and add a set_dd_tags.sh for using `/metadata_from_HOST` file for it
-* [IMPROVEMENT]: set a random password to access unomi
+* [IMPROVEMENT] unomi logs to Datadog
+    * specific jmx conf for datadog-agent are now enabled
+        * get log from `/opt/unomi/unomi-1.3.3-jahia/data/log/karaf.log` and `/opt/unomi/unomi-1.3.3-jahia/data/security/audit.log`
+        * connect to _JMX_ on `service:jmx:rmi:///jndi/rmi://localhost:1099/karaf-root`
+        * autofetch beans from domains `org.apache.karaf`, `com.sun.management` and `java.lang`
+* [IMPROVEMENT] set a random password to access unomi
     * by setting a new envvar `UNOMI_ROOT_PASSWORD` on unomi mode (in `unomi.yml`)
     * get this variable and use it in DX's file `org.jahia.modules.marketingfactory.settings-mf.cfg` (in `unomi_update_dx.yml`)
 
