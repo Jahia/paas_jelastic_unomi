@@ -38,7 +38,7 @@ onBeforeInstall: |
   node_es = {
     image: "jahiadev/elasticsearch:" + esVersion + "-" + javaVersion,
     displayName: "Elasticsearch v" + esVersion,
-    count: 1,
+    count: ${settings.ESMode},
     cloudlets: 40,
     nodeGroup: 'es',
     env: {
@@ -98,6 +98,7 @@ onInstall:
         packageType: ${globals.package_type}
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
+  - setupES
   - setupUnomi
   - if ( '${settings.mode}' == 'production' ):
       - setupDatadogAgentUnomi: cp
@@ -129,6 +130,18 @@ actions:
   setupUnomi:
     - updateHazelcast
     - execdockrun
+
+  setupES:
+    forEach(nodes.es):
+      cmd[${@i.id}]: |-
+        es_conf=/etc/elasticsearch/elasticsearch.yml
+        ipadd=$(ip a s scope global | awk '$1=="inet" {split($2, ipad, "/"); print ipad[1]}')
+        node_name=$(awk -v ipadd=$ipadd '$1==ipadd && $2~/^es_[0-9]+$/ {print $2; exit}' /etc/hosts)
+        sed 's/\(^discovery.type: single-node\)/#\1/' -i $es_conf
+        echo "node.name: $node_name" >> $es_conf
+        awk '$2~/^es_[0-9]+$/ {nodes[$2]} END{asorti(nodes);printf "discovery.zen.ping.unicast.hosts: ["; for(n=1;n<=length(nodes);n++){if(n<length(nodes)){sep=", "}else{sep="]"}; printf "\"%s\"%s",nodes[n],sep}; printf "\n"}' /etc/hosts >> $es_conf
+        echo "discovery.zen.minimum_master_nodes: $(expr ${settings.ESMode} / 2 + 1)" >> $es_conf
+        service elasticsearch restart
 
   setupDatadogAgentUnomi:
     - if (settings.mode == 'production'):
@@ -223,6 +236,14 @@ settings:
         "1.3.3": 1.3.3
       default: 1.3.3
       required: true
+    - name: ESMode
+      type: list
+      caption: Elasticsearch mode
+      values:
+        "1": single
+        "3": 3 nodes cluster
+        "5": 5 nodes cluster
+      default: single
     - name: mode
       type: radio-fieldset
       caption: Operating Mode
