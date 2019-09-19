@@ -11,7 +11,7 @@ description:
     designed to manage customers, leads and visitors data and help personalize
     customers experiences while also offering features to respect visitor
     privacy rules (such as GDPR).
-baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.5
+baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.6
 globals:
   datadog_key: ${settings.ddogApikey}
   shortdomain: ${settings.shortdomain}
