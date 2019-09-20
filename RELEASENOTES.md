@@ -1,6 +1,13 @@
 # Unomi Release notes
 
-## actual version: v1.5
+## actual version: v1.6
+
+### v1.6 (2019-09-20)
+* [IMPROVEMENT] now we can setup Elasticsearch cluster
+    * use setting `ESMode` and set it to `1`, `3` or `5`
+* [IMPROVEMENT] now we can setup Unomi cluster
+    * use setting `UnomiMode` and set it from `1` to `7`
+
 
 ### v1.5 (2019-08-06)
 * [IMPROVEMENT] more tags added for datadog-agents
