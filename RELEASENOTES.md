@@ -3,6 +3,7 @@
 ## actual version: v1.6
 
 ### v1.6 (2019-09-20)
+* [IMPROVEMENT]: PAAS-382 add package to update unomi root password
 * [IMPROVEMENT] now we can setup Elasticsearch cluster
     * use setting `ESMode` and set it to `1`, `3` or `5`
 * [IMPROVEMENT] now we can setup Unomi cluster
