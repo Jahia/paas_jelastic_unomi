@@ -99,18 +99,30 @@ onInstall:
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
   - setupES
+  - setReplica
   - setupUnomi
   - if ( '${settings.mode}' == 'production' ):
       - setupDatadogAgentUnomi: cp
       - setupDatadogAgentEs: es
 
 onAfterServiceScaleOut[cp]:
-  forEach(event.response.nodes):
-    - setupDatadogAgentPerNodeUnomi: ${@i.id}
+  - forEach(event.response.nodes):
+      - setReplica
+      - setupDatadogAgentPerNodeUnomi: ${@i.id}
 
-onBeforeServiceScaleOut[cp]: updateHazelcast
-onBeforeScaleIn[cp]: updateHazelcast
+onBeforeServiceScaleOut[cp]:
+  - updateHazelcast
+onBeforeScaleIn[cp]:
+  - updateHazelcast
 
+onAfterRedeployContainer[es]:
+  - setupES
+onAfterServiceScaleOut[es]:
+  - setupES
+  - setReplica
+onAfterServiceScaleIn[es]:
+  - setupES
+  - setReplica
 
 # -- Actions --
 actions:
@@ -132,6 +144,46 @@ actions:
     - setGlobals:
         unomi_IPs: ${response.ipadd}
 
+
+  updateReplica:
+    - cmd[${nodes.es.first.id}]: |-
+        curl -s http://$(hostname):9200/_cat/shards | awk '{print $1}' | sort | uniq | while read index; do
+            curl -s -XPUT http://$(hostname):9200/$(echo $index)/_settings -d '{"index":{"number_of_replicas": ${globals.replica} }}'
+        done
+
+  setReplica:
+    - if(nodes.es.length > 1):
+        - if(nodes.es.length > 4):
+          - setGlobals:
+              - replica: 2
+        - else:
+          - setGlobals:
+              - replica: 1
+    - else:
+        setGlobals:
+          - replica: 0
+    - forEach(nodes.cp):
+        cmd[${@i.id}]: |-
+          setenv=$(find /opt/unomi/*/bin -name setenv)
+          # test if not update needed
+          actual=$(awk -F'=' '/UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICASa/ {print $NF}' $setenv)
+          if [ ! -z "$actual" ]; then
+            if [ $actual -eq ${globals.replica} ]; then
+              echo "$(hostname) already get the good replica parameters (${globals.replica})"
+              exit 0
+            fi
+          fi
+          # some cleaning in case of an update
+          sed '/^export UNOMI_ELASTICSEARCH/d' -i $setenv
+          echo "export UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
+          echo "export UNOMI_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
+          if (pgrep karaf); then
+            service karaf-service stop
+            sleep 5
+            service karaf-service start
+          fi
+    - updateReplica
+
   updateHazelcast:
     - getUnomiIPs
     - script: |
@@ -145,10 +197,12 @@ actions:
     - cmd[cp]: |-
         sed -i "/<interface>/d" $HAZELCAST_CONFIG
         sed -i "/<member>node/d" $HAZELCAST_CONFIG
-        # sed -i "2i export UNOMI_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" /etc/init.d/karaf-service
-        # sed -i "2i export UNOMI_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" /etc/init.d/karaf-service
-        # sed -i "2i export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" /etc/init.d/karaf-service
-        echo "trololo"
+        envfile=$(find /opt/unomi/*/bin -name setenv)
+        if (grep -q UNOMI_HAZELCAST_TCPIP_MEMBERS $envfile); then
+          sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
+        else
+          echo "export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
+        fi
 
   execdockrun:
     forEach(nodes.cp):
@@ -165,6 +219,11 @@ actions:
         es_conf=/etc/elasticsearch/elasticsearch.yml
         ipadd=$(ip a s scope global | awk '$1=="inet" {split($2, ipad, "/"); print ipad[1]}')
         node_name=$(awk -v ipadd=$ipadd '$1==ipadd && $2~/^es_[0-9]+$/ {print $2; exit}' /etc/hosts)
+        # some cleaning in case of an update
+        sed -e '/^path\.repo/d' \
+            -e '/^node\.name/d' \
+            -e '/^discovery\.zen\./d' \
+            -i $es_conf
         sed 's/\(^discovery.type: single-node\)/#\1/' -i $es_conf
         echo "node.name: $node_name" >> $es_conf
         awk '$2~/^es_[0-9]+$/ {nodes[$2]} END{asorti(nodes);printf "discovery.zen.ping.unicast.hosts: ["; for(n=1;n<=length(nodes);n++){if(n<length(nodes)){sep=", "}else{sep="]"}; printf "\"%s\"%s",nodes[n],sep}; printf "\n"}' /etc/hosts >> $es_conf
