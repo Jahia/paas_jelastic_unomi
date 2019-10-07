@@ -3,6 +3,8 @@
 import fileinput
 import sys
 from binascii import a2b_base64
+import re
+import os.path
 
 new_password = a2b_base64(str.encode(sys.argv[1])).decode("utf-8")
 unomi_env_file = sys.argv[2]
@@ -20,8 +22,10 @@ if not pwd_set:
     with open(unomi_env_file, "a") as file:
         file.write(password_line)
 
+if not os.path.exists(datadog_conf_file):
+    exit(0)
+
 with fileinput.FileInput(datadog_conf_file, inplace=True) as file:
     for line in file:
-        if re.search("^(\s*password: ).*$", line):
-            line = re.sub(r'^(\s*password: ).*\n$',r'\1' + new_password, line)
+        line = re.sub(r'^(\s*password:).*$', r'\1 ' + new_password, line)
         print(line, end='')
