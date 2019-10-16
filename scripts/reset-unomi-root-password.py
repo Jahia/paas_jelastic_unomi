@@ -11,10 +11,10 @@ unomi_env_file = sys.argv[2]
 datadog_conf_file = sys.argv[3]
 
 pwd_set = False
-password_line = "UNOMI_ROOT_PASSWORD=" + new_password
+password_line = "export UNOMI_ROOT_PASSWORD=" + new_password
 with fileinput.FileInput(unomi_env_file, inplace=True) as file:
     for line in file:
-        if line.startswith('UNOMI_ROOT_PASSWORD'):
+        if "UNOMI_ROOT_PASSWORD" in line:
             line = password_line
             pwd_set = True
         print(line, end='')
