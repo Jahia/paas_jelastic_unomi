@@ -64,7 +64,6 @@ onBeforeInstall: |
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
-      UNOMI_ROOT_PASSWORD: '${globals.unomi_root_password}',
       jahia_cfg_operatingMode: '${settings.mode}',
       envName: '${globals.envname}',
       UNOMI_HTTP_PORT: '80',
@@ -203,6 +202,7 @@ actions:
         else
           echo "export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
         fi
+        echo "export UNOMI_ROOT_PASSWORD=${globals.unomi_root_password}" >> /opt/unomi/unomi-$STACK_VERSION/bin/setenv
 
   execdockrun:
     forEach(nodes.cp):
