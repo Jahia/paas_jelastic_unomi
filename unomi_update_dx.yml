@@ -49,8 +49,11 @@ actions:
             break
           }
         }
-        var unomi_pwd = jelastic.env.control.GetContainerEnvVars('${settings.unomienv}', session, unomi_nodeid)
-        return {'result': 0, 'domain': resp.env.domain, 'unomi_pwd': unomi_pwd['object']['UNOMI_ROOT_PASSWORD']}
+        var cmd = 'grep UNOMI_ROOT_PASSWORD /opt/unomi/unomi-$STACK_VERSION/bin/setenv | cut -d"=" -f2-';
+        var command = toJSON([{"command": cmd}]);
+        var res = jelastic.env.control.ExecCmdById('${settings.unomienv}', session, unomi_nodeid, command)
+        var unomi_pwd = res['responses'][0]['out'];
+        return {'result': 0, 'domain': resp.env.domain, 'unomi_pwd': unomi_pwd}
     - setGlobals:
         unomidns: ${response.domain}
         unomi_pwd: ${response.unomi_pwd}
