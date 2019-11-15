@@ -202,7 +202,9 @@ actions:
         else
           echo "export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
         fi
-        echo "export UNOMI_ROOT_PASSWORD=${globals.unomi_root_password}" >> /opt/unomi/unomi-$STACK_VERSION/bin/setenv
+        echo "export UNOMI_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" >> $envfile
+        echo "export UNOMI_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" >> $envfile
+        echo "export UNOMI_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
 
   execdockrun:
     forEach(nodes.cp):
