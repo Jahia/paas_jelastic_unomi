@@ -100,9 +100,8 @@ onInstall:
   - setupES
   - setReplica
   - setupUnomi
-  - if ( '${settings.mode}' == 'production' ):
-      - setupDatadogAgentUnomi: cp
-      - setupDatadogAgentEs: es
+  - setupDatadogAgentUnomi: cp
+  - setupDatadogAgentEs: es
 
 onAfterServiceScaleOut[cp]:
   - forEach(event.response.nodes):
@@ -231,72 +230,69 @@ actions:
         service elasticsearch restart
 
   setupDatadogAgentUnomi:
-    - if (settings.mode == 'production'):
-        forEach(nodes.${this}):
-          cmd[${@i.id}]: |-
-            DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-            echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
-            sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-            echo "tags:" >> /etc/datadog-agent/datadog.yaml
-            echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-            echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - provide:unomi" >> /etc/datadog-agent/datadog.yaml
-            wget -O /etc/datadog-agent/conf.d/jmx.d/conf.yaml ${baseUrl}/configs/dd_jmx_unomi_conf.yaml
-            sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
-            wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
-            wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
-            chmod u+x /usr/local/bin/set_dd_tags.sh
-            /usr/local/bin/set_dd_tags.sh
-            systemctl restart crond datadog-agent
+    forEach(nodes.${this}):
+      cmd[${@i.id}]: |-
+        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
+        echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
+        sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+        echo "tags:" >> /etc/datadog-agent/datadog.yaml
+        echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
+        echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
+        echo " - provide:unomi" >> /etc/datadog-agent/datadog.yaml
+        wget -O /etc/datadog-agent/conf.d/jmx.d/conf.yaml ${baseUrl}/configs/dd_jmx_unomi_conf.yaml
+        sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+        wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
+        wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
+        chmod u+x /usr/local/bin/set_dd_tags.sh
+        /usr/local/bin/set_dd_tags.sh
+        systemctl restart crond datadog-agent
 
   setupDatadogAgentEs:
-    - if (settings.mode == 'production'):
-        forEach(nodes.${this}):
-          cmd[${@i.id}]: |-
-            DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-            echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
-            sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-            echo "tags:" >> /etc/datadog-agent/datadog.yaml
-            echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-            echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            echo " - provide:elasticsearch" >> /etc/datadog-agent/datadog.yaml
-            wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
-            chmod 755 /var/log/elasticsearch/
-            chmod 755 /var/log/elasticsearch/*.log -R
-            echo "---" > /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "logs:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "  - type: file" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    path: /var/log/elasticsearch/*.log" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    source: elasticsearch" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    service: esDatabase" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "init_config:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "instances:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "  - url: http://${HOSTNAME}:9200" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    cluster_stats: false" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    pshard_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    index_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    pending_task_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-            wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
-            wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
-            chmod u+x /usr/local/bin/set_dd_tags.sh
-            /usr/local/bin/set_dd_tags.sh
-            systemctl restart crond datadog-agent
+    forEach(nodes.${this}):
+      cmd[${@i.id}]: |-
+        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
+        echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
+        sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+        echo "tags:" >> /etc/datadog-agent/datadog.yaml
+        echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
+        echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
+        echo " - provide:elasticsearch" >> /etc/datadog-agent/datadog.yaml
+        wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
+        chmod 755 /var/log/elasticsearch/
+        chmod 755 /var/log/elasticsearch/*.log -R
+        echo "---" > /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "logs:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "  - type: file" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    path: /var/log/elasticsearch/*.log" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    source: elasticsearch" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    service: esDatabase" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "init_config:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "instances:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "  - url: http://${HOSTNAME}:9200" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    cluster_stats: false" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    pshard_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    index_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    pending_task_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
+        wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
+        chmod u+x /usr/local/bin/set_dd_tags.sh
+        /usr/local/bin/set_dd_tags.sh
+        systemctl restart crond datadog-agent
 
   setupDatadogAgentPerNodeUnomi:
-    - if (settings.mode == 'production'):
-        - cmd[${this}]: |-
-            DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-            echo "hostname: unomi.${this}" >> /etc/datadog-agent/datadog.yaml
-            sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-            echo "tags:" >> /etc/datadog-agent/datadog.yaml
-            echo " - client:jahiacloud" >> /etc/datadog-agent/datadog.yaml
-            echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
-            echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-            echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-            systemctl restart datadog-agent
+    - cmd[${this}]: |-
+        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
+        echo "hostname: unomi.${this}" >> /etc/datadog-agent/datadog.yaml
+        sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+        echo "tags:" >> /etc/datadog-agent/datadog.yaml
+        echo " - client:jahiacloud" >> /etc/datadog-agent/datadog.yaml
+        echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
+        echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
+        echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
+        systemctl restart datadog-agent
 
   updateDX:
     - log: "## now launching DX update package in order to install and configure MF on the DX env"
@@ -344,19 +340,17 @@ settings:
         "5": 5 nodes cluster
       default: 1
     - name: mode
-      type: radio-fieldset
+      type: radiolist
       caption: Operating Mode
       values:
         production: production
         development: development
       default: production
-      showIf:
-        production:
-          - name: ddogApikey
-            type: string
-            caption: Datadog API KEY
-            required: true
-            vtype: text
+    - name: ddogApikey
+      type: string
+      caption: Datadog API KEY
+      required: true
+      vtype: text
     # - name: dxenv
     #   type: envlist
     #   caption: DX env for MF installation
