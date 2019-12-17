@@ -20,7 +20,6 @@ globals:
   es_version: 5.6.3
   package_type: dev
   unomi_root_password: ${fn.password(20)}
-  # dx_version: ${settings.dxVersion}
 ssl: true
 skipNodeEmails: true
 
@@ -306,7 +305,6 @@ actions:
     - install:
         jps: ${baseUrl}/unomi_update_dx.yml?_${fn.random}
         shortdomain: ${settings.dxenv}
-        # region: ${settings.envRegion}
         settings:
           shortdomain: ${settings.dxenv}
           unomidns: ${env.domain}
@@ -353,16 +351,3 @@ settings:
       caption: Datadog API KEY
       required: true
       vtype: text
-    # - name: dxenv
-    #   type: envlist
-    #   caption: DX env for MF installation
-    #   required: true
-    # - name: mfversion
-    #   type: list
-    #   caption: MF module version
-    #   values:
-    #     value1: 1.10.0
-    #     value2: 1.10.1
-    #     value3: 1.10.2
-    #   default: 1.10.2
-    #   editable: true
