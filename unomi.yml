@@ -216,6 +216,8 @@ actions:
   setupES:
     forEach(nodes.es):
       cmd[${@i.id}]: |-
+        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-azure
+        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3
         es_conf=/etc/elasticsearch/elasticsearch.yml
         ipadd=$(ip a s scope global | awk '$1=="inet" {split($2, ipad, "/"); print ipad[1]}')
         node_name=$(awk -v ipadd=$ipadd '$1==ipadd && $2~/^es_[0-9]+$/ {print $2; exit}' /etc/hosts)
