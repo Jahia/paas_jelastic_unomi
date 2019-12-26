@@ -49,7 +49,7 @@ actions:
             break
           }
         }
-        var cmd = 'grep UNOMI_ROOT_PASSWORD /opt/unomi/unomi-$STACK_VERSION/bin/setenv | cut -d"=" -f2-';
+        var cmd = 'grep UNOMI_ROOT_PASSWORD /opt/jcustomer/jcustomer/bin/setenv | cut -d"=" -f2-';
         var command = toJSON([{"command": cmd}]);
         var res = jelastic.env.control.ExecCmdById('${settings.unomienv}', session, unomi_nodeid, command)
         var unomi_pwd = res['responses'][0]['out'];

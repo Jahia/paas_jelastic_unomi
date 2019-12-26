@@ -25,7 +25,7 @@ skipNodeEmails: true
 
 
 onBeforeInstall: |
-  var matrix = {'1.3.3':'5.6.3'}
+  var matrix = {'1.3.3':'5.6.3', '1.4.1':'5.6.3'}
   var unomiVersion = '${settings.unomiVersion}'
   var esVersion = matrix[unomiVersion]
   var javaVersion = "jdk-1.8.0_144"
@@ -44,7 +44,7 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${globals.envname}',
+      envName: '${env.envName}',
       _ROLE: 'unomi',
       _PROVIDE: 'elasticsearch',
       ES_VERSION: esVersion,
@@ -53,7 +53,8 @@ onBeforeInstall: |
   }
 
   node_unomi = {
-    image: "jahiadev/unomi:" + unomiVersion + "-" + javaVersion,
+    nodeType: "jcustomer",
+    tag: unomiVersion,
     displayName: "Unomi v" + unomiVersion,
     count: ${settings.UnomiMode},
     cloudlets: 32,
@@ -64,7 +65,7 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${globals.envname}',
+      envName: '${env.envName}',
       UNOMI_HTTP_PORT: '80',
       UNOMI_ELASTICSEARCH_ADDRESSES: 'es:9300',
       UNOMI_ELASTICSEARCH_CLUSTERNAME: 'jahia-dx',
@@ -94,6 +95,7 @@ onInstall:
         productName: unomi
         productVersion: ${globals.unomi_version}
         packageType: ${globals.package_type}
+  - setSomeGlobals
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
   - setupES
@@ -103,37 +105,69 @@ onInstall:
   - setupDatadogAgentEs: es
 
 onAfterServiceScaleOut[cp]:
+  - setSomeGlobals
   - forEach(event.response.nodes):
       - setReplica
-      - setupDatadogAgentPerNodeUnomi: ${@i.id}
+  - setupDatadogAgentUnomi: cp
 
 onBeforeServiceScaleOut[cp]:
+  - setSomeGlobals
   - updateHazelcast
+
 onBeforeScaleIn[cp]:
+  - setSomeGlobals
   - updateHazelcast
+
+onAfterRedeployContainer[cp]:
+  - setSomeGlobals
+  - setReplica
+  - setupUnomi
+  - setupDatadogAgentUnomi: cp
 
 onAfterRedeployContainer[es]:
   - setupES
+  - setupDatadogAgentEs: es
+
 onAfterServiceScaleOut[es]:
+  - setSomeGlobals
   - setupES
   - setReplica
+  - setupDatadogAgentEs: es
+
 onAfterServiceScaleIn[es]:
+  - setSomeGlobals
   - setupES
   - setReplica
 
 # -- Actions --
 actions:
+  setSomeGlobals:
+    - if("${settings.unomiVersion}" == "1.3.3"):
+        setGlobals:
+          proname: "unomi"
+          PRONAME: "UNOMI"
+    - if("${settings.unomiVersion}" == "1.4.1"):
+        setGlobals:
+          proname: "jcustomer"
+          PRONAME: "JCUSTOMER"
+
+  setupDatadogAgentUnomi:
+    forEach(nodes.${this}):
+      cmd[${@i.id}]: |-
+        sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+        systemctl restart datadog-agent
+
+
   getUnomiIPs:
     - script: |
         var resp = jelastic.env.control.GetEnvInfo('${env.envName}', session);
         if (resp.result != 0) return resp;
         var ipadd = [];
         for (var i = 0, n = resp.nodes; i < n.length; i++) {
-          var dockername = n[i].customitem.dockerName.split('/')[1];
-          if (dockername == 'unomi') {
+          var nodetype = n[i].nodeType;
+          if (nodetype == 'jcustomer') {
             ipadd.push(n[i].address);
           };
-          //ipadd.push(dockername);
         };
         return {"result": 0,
           "ipadd": ipadd.toString()
@@ -161,9 +195,9 @@ actions:
           - replica: 0
     - forEach(nodes.cp):
         cmd[${@i.id}]: |-
-          setenv=$(find /opt/unomi/*/bin -name setenv)
+          setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
           # test if not update needed
-          actual=$(awk -F'=' '/UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICASa/ {print $NF}' $setenv)
+          actual=$(awk -F'=' '/${PRONAME}_ELASTICSEARCH_MONTHLYINDEX_REPLICAS/ {print $NF}' $setenv)
           if [ ! -z "$actual" ]; then
             if [ $actual -eq ${globals.replica} ]; then
               echo "$(hostname) already get the good replica parameters (${globals.replica})"
@@ -171,14 +205,11 @@ actions:
             fi
           fi
           # some cleaning in case of an update
-          sed '/^export UNOMI_ELASTICSEARCH/d' -i $setenv
-          echo "export UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
-          echo "export UNOMI_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
-          if (pgrep karaf); then
-            service karaf-service stop
-            sleep 5
-            service karaf-service start
-          fi
+          sed '/^export ${globals.PRONAME}_ELASTICSEARCH/d' -i $setenv
+          echo "export ${globals.PRONAME}_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
+          echo "export ${globals.PRONAME}_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
+          systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
+        user: root
     - updateReplica
 
   updateHazelcast:
@@ -187,22 +218,24 @@ actions:
         var resp = jelastic.env.control.AddContainerEnvVars('${env.envName}',
           session,
           nodeGroup='cp',
-          vars={'UNOMI_HAZELCAST_TCPIP_MEMBERS': '${globals.unomi_IPs}'}
+          vars={'${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS': '${globals.unomi_IPs}'}
         );
         if (resp.result != 0) return resp;
         return {"result": 0}
     - cmd[cp]: |-
         sed -i "/<interface>/d" $HAZELCAST_CONFIG
         sed -i "/<member>node/d" $HAZELCAST_CONFIG
-        envfile=$(find /opt/unomi/*/bin -name setenv)
-        if (grep -q UNOMI_HAZELCAST_TCPIP_MEMBERS $envfile); then
+        envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+        if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
           sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
         else
-          echo "export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
+          echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
         fi
-        echo "export UNOMI_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" >> $envfile
-        echo "export UNOMI_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" >> $envfile
-        echo "export UNOMI_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
+        echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" >> $envfile
+        echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" >> $envfile
+        echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
+        systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
+      user: root
 
   execdockrun:
     forEach(nodes.cp):
@@ -211,7 +244,14 @@ actions:
 
   setupUnomi:
     - updateHazelcast
-    - execdockrun
+    - cmd[${nodes.cp.master.id}]:
+        - systemctl enable --now karaf
+      user: root
+    - sleep: 20000
+    - cmd[cp]:
+        - systemctl enable --now karaf
+      user: root
+    # - execdockrun
 
   setupES:
     forEach(nodes.es):
@@ -229,24 +269,6 @@ actions:
         awk '$2~/^es_[0-9]+$/ {nodes[$2]} END{asorti(nodes);printf "discovery.zen.ping.unicast.hosts: ["; for(n=1;n<=length(nodes);n++){if(n<length(nodes)){sep=", "}else{sep="]"}; printf "\"%s\"%s",nodes[n],sep}; printf "\n"}' /etc/hosts >> $es_conf
         echo "discovery.zen.minimum_master_nodes: $(expr ${settings.ESMode} / 2 + 1)" >> $es_conf
         service elasticsearch restart
-
-  setupDatadogAgentUnomi:
-    forEach(nodes.${this}):
-      cmd[${@i.id}]: |-
-        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-        echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
-        sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-        echo "tags:" >> /etc/datadog-agent/datadog.yaml
-        echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-        echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-        echo " - provide:unomi" >> /etc/datadog-agent/datadog.yaml
-        wget -O /etc/datadog-agent/conf.d/jmx.d/conf.yaml ${baseUrl}/configs/dd_jmx_unomi_conf.yaml
-        sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
-        wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
-        wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
-        chmod u+x /usr/local/bin/set_dd_tags.sh
-        /usr/local/bin/set_dd_tags.sh
-        systemctl restart crond datadog-agent
 
   setupDatadogAgentEs:
     forEach(nodes.${this}):
@@ -283,18 +305,6 @@ actions:
         /usr/local/bin/set_dd_tags.sh
         systemctl restart crond datadog-agent
 
-  setupDatadogAgentPerNodeUnomi:
-    - cmd[${this}]: |-
-        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-        echo "hostname: unomi.${this}" >> /etc/datadog-agent/datadog.yaml
-        sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-        echo "tags:" >> /etc/datadog-agent/datadog.yaml
-        echo " - client:jahiacloud" >> /etc/datadog-agent/datadog.yaml
-        echo " - env:${PACKAGE_TYPE}" >> /etc/datadog-agent/datadog.yaml
-        echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-        echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-        systemctl restart datadog-agent
-
   updateDX:
     - log: "## now launching DX update package in order to install and configure MF on the DX env"
     - log: "### settings.dxenv: ${settings.dxenv}"
@@ -317,6 +327,7 @@ settings:
       caption: Unomi Version
       values:
         "1.3.3": 1.3.3
+        "1.4.1": 1.4.1
       default: 1.3.3
       required: true
     - name: UnomiMode
