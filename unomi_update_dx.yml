@@ -60,7 +60,7 @@ actions:
 
   updateDX:
     - cmd[${this}]: |-
-        jcustomer_key=$(cat /root/.secrets/jcustomer_key.b64)
+        jcustomer_key=$(sudo cat /root/.secrets/jcustomer_key.b64)
         sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         wget -O /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg ${baseUrl}/common/org.jahia.modules.marketingfactory.settings-mf.cfg
         sed -i 's!\(mf.unomiURL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/org.jahia.modules.marketingfactory.settings-mf.cfg
