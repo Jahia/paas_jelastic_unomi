@@ -95,6 +95,7 @@ onInstall:
         productName: unomi
         productVersion: ${globals.unomi_version}
         packageType: ${globals.package_type}
+  - setJournaldLimit
   - setSomeGlobals
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
@@ -319,6 +320,12 @@ actions:
           shortdomain: ${settings.dxenv}
           unomidns: ${env.domain}
           mfversion: ${settings.mfversion}
+
+  setJournaldLimit:
+    - cmd[*]: |-
+        sed -i 's/.*SystemMaxUse=.*/SystemMaxUse=200M/g' /etc/systemd/journald.conf
+        systemctl restart systemd-journald.service
+      user: root
 
 settings:
   fields:
