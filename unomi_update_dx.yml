@@ -11,7 +11,6 @@ description:
     designed to manage customers, leads and visitors data and help personalize
     customers experiences while also offering features to respect visitor
     privacy rules (such as GDPR).
-baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/v1.5
 globals:
   shortdomain: ${settings.shortdomain}
   package_type: dev
@@ -50,7 +49,7 @@ actions:
             break
           }
         }
-        var cmd = 'grep UNOMI_ROOT_PASSWORD /opt/jcustomer/jcustomer/bin/setenv | cut -d"=" -f2-';
+        var cmd = "find -H /opt/ -mindepth 4  -type f -name setenv -exec awk -F'=' '$1~/ROOT_PASSWORD$/ {print $2}' {} \\;";
         var command = toJSON([{"command": cmd}]);
         var res = jelastic.env.control.ExecCmdById('${settings.unomienv}', session, unomi_nodeid, command)
         var unomi_pwd = res['responses'][0]['out'];
@@ -76,6 +75,11 @@ actions:
         for mod_file in marketing-factory-core-1.10.4.jar jexperience-1.11.0.jar; do
           if [ -f /data/digital-factory-data/modules/$mod_file ]; then
             rm -v /data/digital-factory-data/modules/$mod_file
+          fi
+        done
+        for conf_file in org.jahia.modules.marketingfactory.settings-mf.cfg org.jahia.modules.jexperience.settings-global.cfg; do
+          if [ -f /data/digital-factory-data/karaf/etc/$conf_file ]; then
+            rm -v /data/digital-factory-data/karaf/etc/$conf_file
           fi
         done
         jcustomer_key=$(sudo cat /root/.secrets/jcustomer.key)
