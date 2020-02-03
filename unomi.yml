@@ -234,7 +234,7 @@ actions:
         fi
         echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" >> $envfile
         echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" >> $envfile
-        echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
+        echo "export {UNOMI,JCUSTOMER}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
         systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
       user: root
 
