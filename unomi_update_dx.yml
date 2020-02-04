@@ -83,7 +83,9 @@ actions:
           fi
         done
         jcustomer_key=$(sudo cat /root/.secrets/jcustomer.key)
-        sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
+        if [ "${this}" == "proc" ]; then
+          sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
+        fi
         wget -O /data/digital-factory-data/karaf/etc/${globals.module_conf_file} ${baseUrl}/common/${globals.module_conf_file}
         sed -i 's!\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)URL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
         sed -i "s,^\# \(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Key=\),\1${jcustomer_key}," /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
