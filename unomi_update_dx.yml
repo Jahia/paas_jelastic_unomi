@@ -126,8 +126,8 @@ actions:
         if (resp.result != 0) return resp;
         var ipadd = [];
         for (var i = 0, n = resp.nodes; i < n.length; i++) {
-          var dockername = n[i].customitem.dockerName.split('/')[1];
-          if (dockername == 'processing' || dockername == 'browsing') {
+          var dockername = n[i].nodeGroup;
+          if (dockername == 'cp' || dockername == 'proc') {
             ipadd.push(n[i].address);
           };
           //ipadd.push(dockername);
