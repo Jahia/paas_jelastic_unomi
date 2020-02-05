@@ -150,7 +150,7 @@ actions:
     - if("${settings.unomiVersion}" == "1.4.1"):
         setGlobals:
           proname: "jcustomer"
-          PRONAME: "JCUSTOMER"
+          PRONAME: "UNOMI"
 
   setupDatadogAgentUnomi:
     forEach(nodes.${this}):
