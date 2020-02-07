@@ -321,7 +321,6 @@ actions:
         settings:
           shortdomain: ${settings.dxenv}
           unomidns: ${env.domain}
-          mfversion: ${settings.mfversion}
 
   setJournaldLimit:
     - cmd[*]: |-
