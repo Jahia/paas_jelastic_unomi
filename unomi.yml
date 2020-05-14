@@ -25,7 +25,12 @@ skipNodeEmails: true
 
 
 onBeforeInstall: |
-  var matrix = {'1.3.3':'5.6.3', '1.4.1':'5.6.3'}
+  var matrix = {
+    '1.3.3':'5.6.3',
+    '1.3.4':'5.6.3',
+    '1.4.1':'5.6.3',
+    '1.4.2':'5.6.3'
+  }
   var unomiVersion = '${settings.productVersion}'
   var esVersion = matrix[unomiVersion]
   var javaVersion = "jdk-1.8.0_144"
@@ -143,14 +148,8 @@ onAfterServiceScaleIn[es]:
 # -- Actions --
 actions:
   setSomeGlobals:
-    - if("${settings.productVersion}" == "1.3.3"):
-        setGlobals:
-          proname: "unomi"
-          PRONAME: "UNOMI"
-    - if("${settings.productVersion}" == "1.4.1"):
-        setGlobals:
-          proname: "jcustomer"
-          PRONAME: "UNOMI"
+    setGlobals:
+      PRONAME: "UNOMI"
 
   setupDatadogAgentUnomi:
     forEach(nodes.${this}):
@@ -335,8 +334,10 @@ settings:
       caption: jCustomer Version
       values:
         "1.3.3": 1.3.3
+        "1.3.4": 1.3.4
         "1.4.1": 1.4.1
-      default: 1.3.3
+        "1.4.2": 1.4.2
+      default: 1.4.2
       required: true
     - name: UnomiMode
       type: list
