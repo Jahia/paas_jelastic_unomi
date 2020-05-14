@@ -59,7 +59,12 @@ actions:
         unomi_pwd: ${response.unomi_pwd}
         unomi_version: ${response.unomi_version}
 
-    - if('${globals.unomi_version}' >= '1.4'):
+    - if('${globals.unomi_version}' >= '1.5'):
+        setGlobals:
+          module_file: jexperience-1.12.0.jar
+          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.0/jexperience-1.12.0.jar
+          module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
+    - else if('${globals.unomi_version}' >= '1.4'):
         setGlobals:
           module_file: jexperience-1.11.0.jar
           module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.11.0/jexperience-1.11.0.jar
