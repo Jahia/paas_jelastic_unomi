@@ -22,6 +22,9 @@ onInstall:
 
   - env.control.AddContainerEnvVars[*]:
     vars: {"UNOMI_VERSION": "${globals.targetDockerTag}", "PACKAGE_TYPE": "${settings.packageType}"}
+  - environment.control.ApplyNodeGroupData [cp, es]:
+      data:
+        productVersion: ${globals.targetDockerTag}
 
   - api: environment.control.RedeployContainersByGroup
     nodeGroup: cp
