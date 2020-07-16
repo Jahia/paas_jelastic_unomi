@@ -282,7 +282,7 @@ actions:
           echo "cluster.initial_master_nodes: $hosts_list" >> $es_conf
         fi
         echo "$discovery_hosts_parameter_name: $hosts_list" >> $es_conf
-        echo "discovery.zen.minimum_master_nodes: $(expr ${settings.ESMode} / 2 + 1)" >> $es_conf
+        echo "discovery.zen.minimum_master_nodes: $(expr ${nodes.es.length} / 2 + 1)" >> $es_conf
         systemctl enable elasticsearch
         systemctl start elasticsearch
 
