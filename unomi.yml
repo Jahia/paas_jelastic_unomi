@@ -57,7 +57,10 @@ onBeforeInstall: |
       _PROVIDE: 'elasticsearch',
       ES_VERSION: esVersion,
       envmode: '${settings.mode}'
-    }
+    },
+    "volumes": [
+      "/var/lib/elasticsearch"
+    ]
   }
 
   node_unomi = {
