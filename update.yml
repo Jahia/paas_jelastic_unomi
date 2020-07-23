@@ -201,7 +201,7 @@ actions:
         echo "$discovery_hosts_parameter_name: $hosts_list" >> $es_conf
         echo "discovery.zen.minimum_master_nodes: $(expr ${nodes.es.length} / 2 + 1)" >> $es_conf
         systemctl enable elasticsearch
-        systemctl start elasticsearch
+        systemctl restart elasticsearch
 
   setupDatadogAgentEs:
     forEach(nodes.${this}):
