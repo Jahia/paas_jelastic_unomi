@@ -156,6 +156,10 @@ actions:
         echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
         systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
       user: root
+    - if ("${response.errOut}" != ""):
+        - return:
+            type: error
+            message: "An error occurred during hazelcast setup."
 
   execdockrun:
     forEach(nodes.cp):
@@ -243,3 +247,7 @@ actions:
         sed -i 's/.*SystemMaxUse=.*/SystemMaxUse=200M/g' /etc/systemd/journald.conf
         systemctl restart systemd-journald.service
       user: root
+    - if ("${response.errOut}" != ""):
+        - return:
+            type: error
+            message: "An error occurred during journald configuration."
