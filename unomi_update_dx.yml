@@ -91,13 +91,17 @@ actions:
         if [ "${this}" == "proc" ]; then
           sed -i "s/#operatingMode/operatingMode/" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         fi
-        wget -O /data/digital-factory-data/karaf/etc/${globals.module_conf_file} ${baseUrl}/common/${globals.module_conf_file}
+        wget -qO /data/digital-factory-data/karaf/etc/${globals.module_conf_file} ${baseUrl}/common/${globals.module_conf_file}
         sed -i 's!\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)URL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
         sed -i "s,^\# \(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Key=\),\1${jcustomer_key}," /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
         sed -i 's/\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Password=\)karaf/\1${globals.unomi_pwd}/' /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
         chown tomcat:tomcat /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
-        wget --progress=dot:giga -O /data/digital-factory-data/modules/${globals.module_file} ${globals.module_url}
+        wget -qO /data/digital-factory-data/modules/${globals.module_file} ${globals.module_url}
         chown tomcat:tomcat /data/digital-factory-data/modules/${globals.module_file}
+    - if ("${response.errOut}" != ""):
+        - return:
+            type: error
+            message: "An error occurred during jexperience installation."
 
   setNGData:
     - script: |
