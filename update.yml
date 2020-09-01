@@ -24,7 +24,6 @@ ssl: true
 skipNodeEmails: true
 
 # --Events --
-
 onUninstall:
   cmd [${targetNodes.nodeGroup}]:
     - sed -i -e 's/.*NOPASSWD.*//g' /etc/sudoers.d/sudo
@@ -58,12 +57,14 @@ onAfterServiceScaleOut[es]:
   - setSomeGlobals
   - setupES
   - setReplica
+  - updateReplica
   - setupDatadogAgentEs: es
 
 onAfterServiceScaleIn[es]:
   - setSomeGlobals
   - setupES
   - setReplica
+  - updateReplica
 
 # -- Actions --
 actions:
@@ -98,8 +99,10 @@ actions:
 
   updateReplica:
     - cmd[${nodes.es.first.id}]: |-
-        curl -s http://$(hostname):9200/_cat/shards | awk '{print $1}' | sort | uniq | while read index; do
-            curl -s -XPUT http://$(hostname):9200/$(echo $index)/_settings -d '{"index":{"number_of_replicas": ${globals.replica} }}'
+        curl -s http://$(hostname):9200/_cat/indices | awk -v repl=${globals.replica} '$6!=repl {print $3}' | while read index; do
+            curl -s -XPUT http://$(hostname):9200/$index/_settings \
+              -H "Content-Type: application/json" \
+              -d '{"index":{"number_of_replicas": ${globals.replica} }}'
         done
 
   setReplica:
@@ -130,7 +133,6 @@ actions:
           echo "export ${globals.PRONAME}_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
           systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
         user: root
-    - updateReplica
 
   updateHazelcast:
     - getUnomiIPs
@@ -243,7 +245,7 @@ actions:
         systemctl restart crond datadog-agent
 
   setJournaldLimit:
-    - cmd[*]: |-
+    - cmd[cp]: |-
         sed -i 's/.*SystemMaxUse=.*/SystemMaxUse=200M/g' /etc/systemd/journald.conf
         systemctl restart systemd-journald.service
       user: root
