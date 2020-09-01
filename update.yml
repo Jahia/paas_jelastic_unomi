@@ -244,20 +244,6 @@ actions:
         /usr/local/bin/set_dd_tags.sh
         systemctl restart crond datadog-agent
 
-  updateDX:
-    - log: "## now launching DX update package in order to install and configure MF on the DX env"
-    - log: "### settings.dxenv: ${settings.dxenv}"
-    - log: "### env.shortdomain: ${env.shortdomain}"
-    - log: "### env.appid: ${env.appid}"
-    - log: "### env.domain: ${env.domain}"
-    - log: "### contexts.context: ${contexts.context}"
-    - install:
-        jps: ${baseUrl}/unomi_update_dx.yml?_${fn.random}
-        shortdomain: ${settings.dxenv}
-        settings:
-          shortdomain: ${settings.dxenv}
-          unomidns: ${env.domain}
-
   setJournaldLimit:
     - cmd[cp]: |-
         sed -i 's/.*SystemMaxUse=.*/SystemMaxUse=200M/g' /etc/systemd/journald.conf
