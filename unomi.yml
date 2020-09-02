@@ -316,12 +316,11 @@ actions:
         echo "init_config:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "instances:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "  - url: http://${HOSTNAME}:9200" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-        echo "    cluster_stats: false" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+        echo "    cluster_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "    pshard_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "    index_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "    pending_task_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-        echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
         wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
         wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
