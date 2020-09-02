@@ -17,7 +17,6 @@ globals:
   shortdomain: ${settings.shortdomain}
   envname: ${env.envName}
   unomi_version: ${settings.productVersion}
-  es_version: 5.6.3
   package_type: dev
   unomi_root_password: ${fn.password(20)}
 ssl: true
@@ -26,15 +25,15 @@ skipNodeEmails: true
 
 onBeforeInstall: |
   var matrix = {
-    '1.3.3':'5.6.3',
-    '1.3.4':'5.6.3',
-    '1.4.1':'5.6.3',
-    '1.4.2':'5.6.3',
-    '1.5.1':'7.6.2'
+    '1.3.3':'5',
+    '1.3.4':'5',
+    '1.4.1':'5',
+    '1.4.2':'5',
+    '1.5.1':'7'
   }
   var unomiVersion = '${settings.productVersion}'
   var esVersion = matrix[unomiVersion]
-  var javaVersion = "jdk-1.8.0_144"
+  
   var resp = {
     result: 0,
     nodes: []
@@ -43,7 +42,8 @@ onBeforeInstall: |
   es_port = unomiVersion >= "1.5" ? "9200" : "9300";
 
   node_es = {
-    image: "jahiadev/elasticsearch:" + esVersion + "-" + javaVersion,
+    nodeType: "jahiastic-elasticsearch",
+    tag: esVersion,
     displayName: "Elasticsearch v" + esVersion,
     count: ${settings.ESMode},
     cloudlets: 40,
@@ -270,8 +270,6 @@ actions:
   setupES:
     forEach(nodes.es):
       cmd[${@i.id}]: |-
-        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-azure
-        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3
         /usr/share/elasticsearch/bin/elasticsearch --version
         es_major_version=$(/usr/share/elasticsearch/bin/elasticsearch --version | cut -d"." -f1 | cut -d" " -f2)
         es_conf=/etc/elasticsearch/elasticsearch.yml
@@ -300,7 +298,6 @@ actions:
   setupDatadogAgentEs:
     forEach(nodes.${this}):
       cmd[${@i.id}]: |-
-        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
         echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
         sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
         echo "tags:" >> /etc/datadog-agent/datadog.yaml

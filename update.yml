@@ -17,7 +17,6 @@ globals:
   shortdomain: ${settings.shortdomain}
   envname: ${env.envName}
   unomi_version: ${settings.productVersion}
-  es_version: 5.6.3
   package_type: dev
   unomi_root_password: ${fn.password(20)}
 ssl: true
@@ -182,8 +181,6 @@ actions:
   setupES:
     forEach(nodes.es):
       cmd[${@i.id}]: |-
-        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-azure
-        /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3
         /usr/share/elasticsearch/bin/elasticsearch --version
         es_major_version=$(/usr/share/elasticsearch/bin/elasticsearch --version | cut -d"." -f1 | cut -d" " -f2)
         es_conf=/etc/elasticsearch/elasticsearch.yml
@@ -212,7 +209,6 @@ actions:
   setupDatadogAgentEs:
     forEach(nodes.${this}):
       cmd[${@i.id}]: |-
-        DD_API_KEY=${globals.datadog_key} bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
         echo "hostname: ${this}.${@i.id}" >> /etc/datadog-agent/datadog.yaml
         sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
         echo "tags:" >> /etc/datadog-agent/datadog.yaml
