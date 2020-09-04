@@ -285,8 +285,8 @@ actions:
         sed -e '/^path\.repo/d' \
             -e '/^node\.name/d' \
             -e '/^discovery\.zen\./d' \
-            -e '/^discovery\.seed\./d' \
-            -e '/^cluster\.initial\./d' \
+            -e '/^discovery\.seed_/d' \
+            -e '/^cluster\.initial_/d' \
             -i $es_conf
         sed 's/\(^discovery.type: single-node\)/#\1/' -i $es_conf
         echo "node.name: $node_name" >> $es_conf
