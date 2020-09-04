@@ -110,7 +110,7 @@ onInstall:
   - setSomeGlobals
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
-  - setupES
+  - setupES: es
   - setReplica
   - updateReplica
   - setupUnomi
@@ -138,19 +138,23 @@ onAfterRedeployContainer[cp]:
   - setupDatadogAgentUnomi: cp
 
 onAfterRedeployContainer[es]:
-  - setupES
-  - setupDatadogAgentEs: es
+  - if ('${event.params.nodeGroup.print()}' != ''):
+      - setupES: ${event.params.nodeGroup}
+      - setupDatadogAgentEs: ${event.params.nodeGroup}
+  - elif ('${event.params.nodeId.print()}' != ''):
+      - setupES: ${event.params.nodeId}
+      - setupDatadogAgentEs: ${event.params.nodeId}
 
 onAfterServiceScaleOut[es]:
   - setSomeGlobals
-  - setupES
+  - setupES: es
   - setReplica
   - updateReplica
   - setupDatadogAgentEs: es
 
 onAfterServiceScaleIn[es]:
   - setSomeGlobals
-  - setupES
+  - setupES: es
   - setReplica
   - updateReplica
 
@@ -268,7 +272,7 @@ actions:
     # - execdockrun
 
   setupES:
-    forEach(nodes.es):
+    forEach(nodes.${this}):
       cmd[${@i.id}]: |-
         /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-azure
         /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3
