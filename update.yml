@@ -64,7 +64,7 @@ onAfterServiceScaleOut[es]:
   - updateReplica
   - setupDatadogAgentEs: es
 
-onAfterServiceScaleIn[es]:
+onAfterScaleIn[es]:
   - setSomeGlobals
   - setupES: es
   - setReplica
