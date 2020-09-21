@@ -5,7 +5,6 @@ name: Unomi - Region Migrate
 id: unomi-region-migrate
 description:
   short: Unomi - Region Migrate
-baseUrl: https://github.com/Jahia/paas_jelastic_unomi/raw/master
 
 mixins:
   - update.yml
@@ -30,10 +29,8 @@ onInstall:
   - getUnomiPwd
   - cleanupKarafConf
   - setupUnomi
-
   - if("${globals.linked}" == "true"):
       - update_dx
-
   - log: "THIS IS THE END"
 
 
@@ -172,7 +169,6 @@ actions:
             hardwareNodeGroup: ${settings.targetRegion}
             isOnline: false
     - log: "MIGRATION to ${settings.targetRegion} IS DONE"
-
 
 settings:
   fields:
