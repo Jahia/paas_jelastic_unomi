@@ -1,0 +1,179 @@
+---
+type: update
+version: 0.1
+name: Unomi - Region Migrate
+id: unomi-region-migrate
+description:
+  short: Unomi - Region Migrate
+
+mixins:
+  - update.yml
+
+globals:
+  - maxtry: 10
+
+onInstall:
+  - log: "Start blabla"
+  - isRegionTargetOK
+  - getLinkedEnv
+  - disablingKaraf
+  - disablingES
+  - stopEnv
+  - waitForState:
+      state: stopped
+  - migrationRegion
+  - startEnv
+  - waitForState:
+      state: running
+  - setSomeGlobals
+  - getUnomiPwd
+  - cleanupKarafConf
+  - setupUnomi
+  - if("${globals.linked}" == "true"):
+      - update_dx
+  - log: "THIS IS THE END"
+
+
+actions:
+  cleanupKarafConf:
+    cmd[cp]: |-
+      sed -e '/${globals.PRONAME}_ROOT_PASSWORD/d' \
+          -e '/HAZELCAST_TCPIP_MEMBERS/d' \
+          -e '/${globals.PRONAME}_CLUSTER_\(INTERNAL\|PUBLIC\)_ADDRESS/d' \
+          -i $(find -H /opt/ -mindepth 4  -type f -name setenv)
+  getUnomiPwd:
+    - cmd[${nodes.cp.master.id}]: |-
+        awk -F'=' '/_ROOT_PASSWORD=/ {print $NF; exit}' $(find -H /opt/ -mindepth 4  -type f -name setenv)
+    - setGlobals:
+        unomi_root_password: ${response.out}
+
+  isRegionTargetOK:
+    - if ("${env.region}" == "${settings.targetRegion}"):
+        - log: "${env.envName} is already on region ${settings.targetRegion}. ENDING MANIFEST HERE."
+        - return:
+            type: error
+            message: "Already in the targeted region"
+    - else:
+        - log: "${env.envName} is on region ${env.region}, it's ok to move it to region ${settings.targetRegion}"
+
+  disablingKaraf:
+    - log: "Safely stopping and disabling karaf service..."
+    - cmd[cp]: |-
+        systemctl disable --now karaf
+      user: root
+
+  disablingES:
+    - log: "Safely stopping elasticsearch service..."
+    - cmd[es]: |-
+        systemctl stop elasticsearch
+      user: root
+
+  getLinkedEnv:
+    - script: |-
+        jahia_linked = [];
+        envs = jelastic.environment.control.getenvs("appstore", session)["infos"];
+
+        for (i in envs) {
+          nodeGroups = envs[i]["nodeGroups"];
+          for (j in nodeGroups) {
+            if (nodeGroups[j]["envLink"] == "${env.envName}") {
+              jahia_linked.push(envs[i]["env"]["envName"]);
+              break;
+            }
+          }
+        }
+        if(jahia_linked.length > 0){
+          linked = "true"
+        }
+        else{
+          linked = "false"
+        }
+        return {"result": 0, "envs": jahia_linked, "linked": linked};
+    - setGlobals:
+        linkedEnv: ${response.envs.toJSON()}
+        linked: ${response.linked}
+    - log: "linkedEnv: ${globals.linkedEnv}"
+
+  update_dx:
+    - script: |-
+        list = ${globals.linkedEnv}
+        if(list.length == 1){
+          last = "true"
+          }
+        else{
+          last = "false"
+          }
+        el = list.pop()
+        return {"result": 0, "env": el, "linkedEnv": list, "last": last}
+    - setGlobals:
+        - linkedEnv: ${response.linkedEnv.toJSON()}
+    - set:
+        current_env: ${response.env}
+        last_env: ${response.last}
+    - log: "NOW LAUNCHING unomi_update_dx.yml on env ${this.current_env}"
+    - script: |-
+        data = {
+          "targetAppid": "${this.current_env}",
+          "manifest": "${baseUrl}/unomi_update_dx.yml",
+          "settings": {
+            "unomienv": "${env.envName}"
+            }
+          }
+        res = jelastic.dev.scripting.eval("appstore", session, "InstallApp", data)
+        return {"result": 0, "out": res}
+    - if("${this.last_env}" == "true"):
+        - log: "THAT WAS THE LAST LINKED ENV"
+    - else:
+        - update_dx
+
+  waitForState:
+    - if("${this.state}" == "running"):
+        - set:
+            state_int: 1
+    - else:
+        - set:
+            state_int: 2
+    - api: environment.control.getenvinfo
+    - if (${response.env.status} != ${this.state_int}):
+        - log: "not yet ${this.state} (${global.maxtry} try remaining)"
+        - sleep: 1000
+        - script: |-
+            return {"result": 0, "maxtry": ${globals.maxtry} - 1};
+        - if (${response.maxtry} == 0):
+            - return:
+                type: error
+                message: "WAITING FOR RUNNING TIMEOUT, LAST KNOWN ENV STATUS IS: ${response.env.status}"
+        - else:
+            - setGlobals:
+                maxtry: ${response.maxtry}
+        - waitForState:
+            state: ${this.state}
+    - else:
+        - log: "${env.envName} have reached the ${this.state} state :)"
+
+  stopEnv:
+    - log: "STOPPING ENV ${env.envName} before region migration..."
+    - api:
+        - method: environment.control.StopEnv
+
+  startEnv:
+    - log: "STARTING ENV ${env.envName} in the new region"
+    - api:
+        - method: environment.control.StartEnv
+
+  migrationRegion:
+    - log: "STARTING MIGRATION to ${settings.targetRegion}"
+    - api:
+        - method: environment.control.Migrate
+          params:
+            hardwareNodeGroup: ${settings.targetRegion}
+            isOnline: false
+    - log: "MIGRATION to ${settings.targetRegion} IS DONE"
+
+settings:
+  fields:
+    - name: targetRegion
+      type: regionlist
+      caption: Target Region
+      required: true
+      tooltip: bla bla hop la
