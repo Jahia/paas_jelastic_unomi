@@ -28,15 +28,6 @@ onInstall:
   - updateDX: proc
   - updateDX: cp
 
-
-onAfterServiceScaleOut[unomi]:
-  forEach(event.response.nodes):
-    - setupDatadogAgentPerNodeUnomi: ${@i.id}
-
-onBeforeServiceScaleOut[unomi]: updateHazelcast
-onBeforeScaleIn[unomi]: updateHazelcast
-
-
 # -- Actions --
 actions:
   getUnomiDNSandPwd:
