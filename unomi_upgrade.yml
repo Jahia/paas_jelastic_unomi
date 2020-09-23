@@ -1,7 +1,8 @@
 ---
 type: update
-version: 0.1
+version: 1.5.2
 name: Unomi - Upgrade
+logo: /images/jahia-logo-70x70.png
 id: unomi-upgrade
 description:
   short: Unomi - Upgrade
