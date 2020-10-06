@@ -210,7 +210,7 @@ actions:
   setupDatadogAgentEs:
     cmd[${this}]: |-
       DD_API_KEY=$(sed -n 's/DATADOGAPIKEY=\(.*\)/\1/p' < /.jelenv) bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-      echo "hostname: es.${this}" >> /etc/datadog-agent/datadog.yaml
+      echo "hostname: es.$(hostname | sed 's/node\([0-9]*\).*/\1/g')" >> /etc/datadog-agent/datadog.yaml
       sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
       echo "tags:" >> /etc/datadog-agent/datadog.yaml
       echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
