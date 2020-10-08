@@ -191,8 +191,9 @@ actions:
 
   updateReplica:
     - cmd[${nodes.es.first.id}]: |-
-        curl -s http://$(hostname):9200/_cat/indices | awk -v repl=${globals.replica} '$6!=repl {print $3}' | while read index; do
-            curl -s -XPUT http://$(hostname):9200/$index/_settings \
+        NODE_HOSTNAME=$(echo "${nodes.es.first.url}" | sed 's/^https:\/\///')
+        curl -s http://${NODE_HOSTNAME}:9200/_cat/indices | awk -v repl=${globals.replica} '$6!=repl {print $3}' | while read index; do
+            curl -s -XPUT http://${NODE_HOSTNAME}:9200/$index/_settings \
               -H "Content-Type: application/json" \
               -d '{"index":{"number_of_replicas": ${globals.replica} }}'
         done
@@ -236,20 +237,21 @@ actions:
         );
         if (resp.result != 0) return resp;
         return {"result": 0}
-    - cmd[cp]: |-
-        sed -i "/<interface>/d" $HAZELCAST_CONFIG
-        sed -i "/<member>node/d" $HAZELCAST_CONFIG
-        envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
-        if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
-          sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
-        else
-          echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
-        fi
-        echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=https://${HOSTNAME}" >> $envfile
-        echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=https://${HOSTNAME}:9443" >> $envfile
-        echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
-        systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
-      user: root
+    - forEach(nodes.cp):
+        cmd[${@i.id}]: |-
+          sed -i "/<interface>/d" $HAZELCAST_CONFIG
+          sed -i "/<member>node/d" $HAZELCAST_CONFIG
+          envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+          if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
+            sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
+          else
+            echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
+          fi
+          echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=${@i.url}" >> $envfile
+          echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=${@i.url}:9443" >> $envfile
+          echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
+          systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
+        user: root
     - if ("${response.errOut}" != ""):
         - return:
             type: error
@@ -301,38 +303,40 @@ actions:
       systemctl restart elasticsearch
 
   setupDatadogAgentEs:
-    cmd[${this}]: |-
-      DD_API_KEY=$(sed -n 's/DATADOGAPIKEY=\(.*\)/\1/p' < /.jelenv) bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
-      echo "hostname: es.$(hostname | sed 's/node\([0-9]*\).*/\1/g')" >> /etc/datadog-agent/datadog.yaml
-      sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
-      echo "tags:" >> /etc/datadog-agent/datadog.yaml
-      echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
-      echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
-      echo " - provide:elasticsearch" >> /etc/datadog-agent/datadog.yaml
-      wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
-      chmod 755 /var/log/elasticsearch/
-      chmod 755 /var/log/elasticsearch/*.log -R
-      echo "---" > /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "logs:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "  - type: file" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    path: /var/log/elasticsearch/*.log" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    source: elasticsearch" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    service: esDatabase" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "init_config:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "instances:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "  - url: http://${HOSTNAME}:9200" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    cluster_stats: false" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    pshard_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    index_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    pending_task_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
-      wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
-      chmod u+x /usr/local/bin/set_dd_tags.sh
-      /usr/local/bin/set_dd_tags.sh
-      systemctl restart crond datadog-agent
+    - forEach(nodes.${this}):
+        cmd[${@i.id}]: |-
+          NODE_HOSTNAME=$(echo "${@i.url}" | sed 's/^https:\/\///')
+          DD_API_KEY=$(sed -n 's/DATADOGAPIKEY=\(.*\)/\1/p' < /.jelenv) bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh)"
+          echo "hostname: es.${@i.id}" >> /etc/datadog-agent/datadog.yaml
+          sed -i 's/# logs_enabled: false/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+          echo "tags:" >> /etc/datadog-agent/datadog.yaml
+          echo " - product:unomi" >> /etc/datadog-agent/datadog.yaml
+          echo " - version:${UNOMI_VERSION}" >> /etc/datadog-agent/datadog.yaml
+          echo " - provide:elasticsearch" >> /etc/datadog-agent/datadog.yaml
+          wget -O /etc/datadog-agent/conf.d/elastic.d/conf.yaml ${baseUrl}/common/elasticsearch_dd_conf.yaml
+          chmod 755 /var/log/elasticsearch/
+          chmod 755 /var/log/elasticsearch/*.log -R
+          echo "---" > /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "logs:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "  - type: file" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    path: /var/log/elasticsearch/*.log" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    source: elasticsearch" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    service: esDatabase" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "init_config:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "instances:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "  - url: http://${NODE_HOSTNAME}:9200" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    cluster_stats: false" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    pshard_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    index_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    pending_task_stats: true" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "    tags:" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "      - 'env:${PACKAGE_TYPE}'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          echo "      - 'role:esdatabase'" >> /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
+          wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
+          chmod u+x /usr/local/bin/set_dd_tags.sh
+          /usr/local/bin/set_dd_tags.sh
+          systemctl restart crond datadog-agent
 
   setJournaldLimit:
     - cmd[cp]: |-
