@@ -48,6 +48,7 @@ onBeforeInstall: |
     count: ${settings.ESMode},
     cloudlets: 40,
     nodeGroup: 'es',
+    isSLBAccessEnabled: false,
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
