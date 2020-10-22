@@ -26,6 +26,19 @@ onInstall:
 
 # -- Actions --
 actions:
+  getJahiaVersion:
+    - script: |
+        const envName       = "${env.envName}";
+              env           = jelastic.env.control.GetEnvInfo(envName, session);
+              jahia_version = env.nodeGroups.filter(function (nodeGroup) {
+                                return nodeGroup.name == "cp";
+                              })
+                              .pop()
+                              .productVersion;
+        return {'result': 0, 'out': jahia_version}
+    - setGlobals:
+        jahia_version: ${response.out}
+
   getUnomiDNSandPwd:
     - script: |
         var resp = jelastic.env.control.GetEnvInfo('${settings.unomienv}', session)
@@ -46,15 +59,23 @@ actions:
         unomi_pwd: ${response.unomi_pwd}
         unomi_version: ${response.unomi_version}
 
+    - getJahiaVersion
+
     - if('${globals.unomi_version}' >= '1.5'):
-        setGlobals:
-          module_file: jexperience-1.12.1.jar
-          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.1/jexperience-1.12.1.jar
-          module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
+        - if('${globals.jahia_version}' >= '8.0.1.0'):
+            setGlobals:
+              module_file: jexperience-1.12.2.jar
+              module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.2/jexperience-1.12.2.jar
+              module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
+        - else:
+            setGlobals:
+              module_file: jexperience-1.12.1.jar
+              module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.1/jexperience-1.12.1.jar
+              module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
     - elif('${globals.unomi_version}' >= '1.4'):
         setGlobals:
-          module_file: jexperience-1.11.1.jar
-          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.11.1/jexperience-1.11.1.jar
+          module_file: jexperience-1.11.2.jar
+          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.11.2/jexperience-1.11.2.jar
           module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
     - else:
         setGlobals:
