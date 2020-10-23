@@ -170,7 +170,7 @@ actions:
       cmd[${@i.id}]: |-
         sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
         mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
-        chown $(sed -n 's/^STACK_USER=\(.*\)/\1/p' < /.jelenv):root /var/log/jelastic-packages
+        chown root:root /var/log/jelastic-packages
         chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
         wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
         systemctl restart datadog-agent
@@ -340,7 +340,7 @@ actions:
           wget -O /usr/local/bin/set_dd_tags.sh ${baseUrl}/scripts/set_dd_tags.sh
           wget -O /etc/cron.d/set_dd_tags_cron ${baseUrl}/configs/set_dd_tags_cron
           mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
-          chown $(sed -n 's/^STACK_USER=\(.*\)/\1/p' < /.jelenv):root /var/log/jelastic-packages
+          chown root:root /var/log/jelastic-packages
           chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
           wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
           chmod u+x /usr/local/bin/set_dd_tags.sh
