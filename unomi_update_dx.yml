@@ -141,6 +141,27 @@ actions:
 
   allowIP:
     - script: |
+        const unomi_env_name = "${settings.unomienv}";
+        const nodes_infos = jelastic.env.control.GetEnvInfo(
+                unomi_env_name,
+                session
+              ).nodes;
+        const node_id = nodes_infos.filter(function (node) {
+                          return node.nodeGroup == "cp";
+                        }).pop().id;
+        const container_env_vars = jelastic.env.control.GetContainerEnvVars(
+                                     unomi_env_name,
+                                     session,
+                                     node_id
+                                   );
+        const allowed_ips = container_env_vars.object.UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES;
+
+        return allowed_ips === undefined?
+          {"result": 0, "value": ""} :
+          {"result": 0, "value": allowed_ips};
+    - setGlobals:
+        unomi_allowed_ips: ${response.value}
+    - script: |
         var resp = jelastic.env.control.GetEnvInfo('${env.envName}', session);
         if (resp.result != 0) return resp;
         var ipadd = [];
@@ -158,14 +179,21 @@ actions:
         ipadd_to_allow: ${response.ipadd}
     - log: "## these ip addresses should be allowed for unomi: ${globals.ipadd_to_allow}"
     - script: |
+        // Filter the list in order to remove empty strings
+        var allowed_ips = '${globals.unomi_allowed_ips}'.split(',')
+                          .filter( function(e) {
+                            return e;
+                          });
+        var new_ip_to_allow = '${globals.ipadd_to_allow}'.split(',');
+        var ip_to_allow = allowed_ips.concat(new_ip_to_allow).join(',');
         var resp = jelastic.env.control.AddContainerEnvVars('${settings.unomienv}',
           session,
           nodeGroup='cp',
-          vars={'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES': '${globals.ipadd_to_allow}'}
+          vars={'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES': ip_to_allow }
         );
         if (resp.result != 0) return resp;
-        return {"result": 0}
-    - log: "## 'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES=${globals.ipadd_to_allow}' set in unomi nodes"
+        return {"result": 0, "allowed_ips": ip_to_allow}
+    - log: "## 'UNOMI_THIRDPARTY_PROVIDER1_IPADDRESSES=${response.allowed_ips}' set in unomi nodes"
     - script: |
         var resp = jelastic.env.control.RestartNodes('${settings.unomienv}',
           session,
