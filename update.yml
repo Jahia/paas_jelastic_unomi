@@ -74,6 +74,10 @@ actions:
     forEach(nodes.${this}):
       cmd[${@i.id}]: |-
         sed -i 's/\(password: \).*/\1${globals.unomi_root_password}/' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+        mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
+        chown root:root /var/log/jelastic-packages
+        chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
+        wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
         systemctl restart datadog-agent
 
 
@@ -149,10 +153,14 @@ actions:
           sed -i "/<member>node/d" $HAZELCAST_CONFIG
           envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
           if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
-            sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
+            sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\).*/\1${globals.unomi_IPs}/' -i $envfile
           else
             echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
           fi
+          sed -e '/${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS/d' \
+              -e '/${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS/d' \
+              -e '/${globals.PRONAME}_ROOT_PASSWORD/d' \
+              -i $envfile
           echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=${@i.url}" >> $envfile
           echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=${@i.url}:9443" >> $envfile
           echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
@@ -214,6 +222,10 @@ actions:
           chmod 755 /var/log/elasticsearch/*.log -R
           sed -i "s/\(url: http:\/\/\).*\(:.*\)/\1${NODE_HOSTNAME}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
           sed -i "s/\(env:\).*\('\)/\1${PACKAGE_TYPE}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+          mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
+          chown root:root /var/log/jelastic-packages
+          chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
+          wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
           systemctl restart crond datadog-agent
 
   setJournaldLimit:
