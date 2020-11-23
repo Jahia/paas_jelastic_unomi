@@ -250,10 +250,14 @@ actions:
           sed -i "/<member>node/d" $HAZELCAST_CONFIG
           envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
           if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
-            sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\)/\1${globals.unomi_IPs}/' -i $envfile
+            sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\).*/\1${globals.unomi_IPs}/' -i $envfile
           else
             echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
           fi
+          sed -e '/${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS/d' \
+              -e '/${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS/d' \
+              -e '/${globals.PRONAME}_ROOT_PASSWORD/d' \
+              -i $envfile
           echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=${@i.url}" >> $envfile
           echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=${@i.url}:9443" >> $envfile
           echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
