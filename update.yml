@@ -13,11 +13,13 @@ globals:
   envname: ${env.envName}
   unomi_version: ${settings.productVersion}
   package_type: dev
-  unomi_root_password: ${fn.password(20)}
 ssl: true
 skipNodeEmails: true
 
 # --Events --
+onInstall:
+  - getUnomiRootPassword
+
 onUninstall:
   cmd [${targetNodes.nodeGroup}]:
     - sed -i -e 's/.*NOPASSWD.*//g' /etc/sudoers.d/sudo
@@ -66,6 +68,13 @@ onAfterScaleIn[es]:
 
 # -- Actions --
 actions:
+  getUnomiRootPassword:
+    - cmd [${nodes.cp.first.id}]: |-
+        setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+        grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2
+    - setGlobals:
+        unomi_root_password: ${response.out}
+
   setSomeGlobals:
     setGlobals:
       PRONAME: "UNOMI"
