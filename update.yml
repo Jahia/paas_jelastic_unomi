@@ -74,7 +74,7 @@ actions:
   saveUnomiRootPassword:
     - cmd [${nodes.cp.first.id}]: |-
         setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
-        grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2
+        grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2 | sed 's,\s\+,,g'
     - environment.control.ApplyNodeGroupData [cp]:
         data:
           temp_unomi_root_password: ${response.out}
