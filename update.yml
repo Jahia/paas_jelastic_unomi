@@ -23,17 +23,21 @@ onUninstall:
 
 onBeforeScaleIn[cp]:
   - saveUnomiRootPassword
+
+onAfterScaleIn[cp]:
+  - getUnomiRootPassword
   - setSomeGlobals
   - updateHazelcast
+  - forEach(event.response.nodes):
+      - setReplica
 
 onBeforeServiceScaleOut[cp]:
   - saveUnomiRootPassword
-  - setSomeGlobals
-  - updateHazelcast
 
 onAfterServiceScaleOut[cp]:
   - getUnomiRootPassword
   - setSomeGlobals
+  - updateHazelcast
   - forEach(event.response.nodes):
       - setReplica
   - setupDatadogAgentUnomi: cp
