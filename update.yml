@@ -13,31 +13,40 @@ globals:
   envname: ${env.envName}
   unomi_version: ${settings.productVersion}
   package_type: dev
-  unomi_root_password: ${fn.password(20)}
 ssl: true
 skipNodeEmails: true
 
-# --Events --
 onUninstall:
   cmd [${targetNodes.nodeGroup}]:
     - sed -i -e 's/.*NOPASSWD.*//g' /etc/sudoers.d/sudo
   user: root
 
-onAfterServiceScaleOut[cp]:
+onBeforeScaleIn[cp]:
+  - saveUnomiRootPassword
+
+onAfterScaleIn[cp]:
+  - getUnomiRootPassword
   - setSomeGlobals
+  - updateHazelcast
+  - forEach(event.response.nodes):
+      - setReplica
+
+onBeforeServiceScaleOut[cp]:
+  - saveUnomiRootPassword
+
+onAfterServiceScaleOut[cp]:
+  - getUnomiRootPassword
+  - setSomeGlobals
+  - updateHazelcast
   - forEach(event.response.nodes):
       - setReplica
   - setupDatadogAgentUnomi: cp
 
-onBeforeServiceScaleOut[cp]:
-  - setSomeGlobals
-  - updateHazelcast
-
-onBeforeScaleIn[cp]:
-  - setSomeGlobals
-  - updateHazelcast
+onBeforeRedeployContainer[cp]:
+  - saveUnomiRootPassword
 
 onAfterRedeployContainer[cp]:
+  - getUnomiRootPassword
   - setSomeGlobals
   - setReplica
   - setupUnomi
@@ -66,6 +75,25 @@ onAfterScaleIn[es]:
 
 # -- Actions --
 actions:
+  saveUnomiRootPassword:
+    - cmd [${nodes.cp.first.id}]: |-
+        setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+        grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2 | sed 's,\s\+,,g'
+    - environment.control.ApplyNodeGroupData [cp]:
+        data:
+          temp_unomi_root_password: ${response.out}
+
+  getUnomiRootPassword:
+    - script: |-
+        nodeGroups = jelastic.environment.control.getnodegroups("${env.envName}", session)["object"];
+        for (n in nodeGroups) {
+          if (typeof nodeGroups[n]["temp_unomi_root_password"] !== "undefined") {
+            return {"result": 0, "temp_unomi_root_password": nodeGroups[n]["temp_unomi_root_password"]}
+          }
+        }
+    - setGlobals:
+        unomi_root_password: ${response.temp_unomi_root_password}
+
   setSomeGlobals:
     setGlobals:
       PRONAME: "UNOMI"
