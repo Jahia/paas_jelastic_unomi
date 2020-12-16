@@ -1,0 +1,8 @@
+---
+type: update
+version: 1.5.2
+name: Migrate jCustomer env to v2
+id: migrate-jcustomer-env-v2
+
+onInstall:
+  - log: Nothing to do
