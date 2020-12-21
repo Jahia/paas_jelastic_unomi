@@ -101,6 +101,9 @@ onUninstall:
   user: root
 
 onInstall:
+  - if (settings.rootPassword):
+      setGlobals:
+        unomi_root_password: ${settings.rootPassword}
   - environment.control.ApplyNodeGroupData [cp, es]:
       data:
         productName: unomi
@@ -398,3 +401,6 @@ settings:
       caption: Datadog API KEY
       required: true
       vtype: text
+    - name: rootPassword
+      type: string
+      caption: Unomi root password
