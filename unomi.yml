@@ -172,6 +172,9 @@ onAfterScaleIn[es]:
   - setReplica
   - updateReplica
 
+onBeforeDelete:
+  deleteEnvLink
+
 # -- Actions --
 actions:
   saveUnomiRootPassword:
@@ -362,6 +365,40 @@ actions:
         - return:
             type: error
             message: "An error occurred during journald configuration."
+
+  deleteEnvLink:
+    script: |-
+      jahia_linked = [];
+      envs = jelastic.environment.control.getenvs("appstore", session)["infos"];
+
+      for (i in envs) {
+        nodeGroups = envs[i]["nodeGroups"];
+        for (j in nodeGroups) {
+          if (nodeGroups[j]["envLink"] == "${env.envName}") {
+            jahia_linked.push(envs[i]["env"]["envName"]);
+            break;
+          }
+        }
+      }
+
+      if (jahia_linked.length == 0) {
+        return {"result": 0, "out": "No jahia linked"};
+      }
+
+      res = ""
+      jahia_linked.forEach(
+        function(jahiaEnvname) {
+          var resp = jelastic.env.control.ApplyNodeGroupData(jahiaEnvname, session,
+            nodeGroup='cp',
+            data={'envLink': ''}
+          );
+          var resp = jelastic.env.control.ApplyNodeGroupData(jahiaEnvname, session,
+            nodeGroup='proc',
+            data={'envLink': ''}
+          );
+        }
+      );
+      return {"result": 0, "out": "Unlinked following environments: " + jahia_linked};
 
 settings:
   fields:
