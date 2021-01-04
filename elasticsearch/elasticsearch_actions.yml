@@ -1,0 +1,24 @@
+---
+
+actions:
+  checkElasticsearchHealth:
+    - cmd[${this}]: |-
+        if ! rpm --quiet -q jq; then
+          echo "[INFO] Installing jq to parse healthcheck module response"
+          yum install -y jq > /dev/null
+        fi
+      user: root
+    - cmd[${nodes.es.first.id}]: |-
+        health_file="/tmp/es_cluster_health.json"
+        if service elasticsearch status > /dev/null; then
+          curl -Ssf "es:9200/_cluster/health?timeout=10s" > $health_file || (rm -f $health_file; exit 1)
+          status=$(cat $health_file | jq ".status")
+          real_nodes_count=$(cat $health_file | jq ".number_of_nodes")
+          if ([ $status = "\"green\"" ] || [ $status = "\"yellow\"" ]) && \
+          [ $real_nodes_count -eq ${nodes.es.length} ]; then
+            exit 0
+          fi
+        fi
+        echo "[ERROR] There is an issue with the cluster, exiting" 1>&2
+        exit 1
+      user: root

@@ -1,0 +1,13 @@
+---
+
+actions:
+  checkJcustomerHealth:
+    cmd [${this}]: |-
+      if service karaf status > /dev/null; then
+        setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+        karaf_pwd=$(grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2 | sed 's,\s\+,,g')
+        karaf_credentials="karaf:$karaf_pwd"
+        curl -fsI /dev/null -u "$karaf_credentials" http://localhost:80/cxs/privacy/info && exit 0
+      fi
+      rc=$? && echo "[ERROR] jCustomer is unavailable, exiting" && exit $rc
+    user: root
