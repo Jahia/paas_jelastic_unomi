@@ -19,6 +19,7 @@ onInstall:
   - checkJcustomerHealth: cp
   - checkElasticsearchHealth: es
 
+  - eventsUpdate # PAAS-1234
   - setupDatadogAgentEs: es   # PAAS-1309
 
   ### Post-actions
@@ -27,6 +28,10 @@ onInstall:
   - checkElasticsearchHealth: es
 
 actions:
+  eventsUpdate:
+    install:
+      jps: "${baseUrl}/../../update.yml"
+
   setupDatadogAgentEs:
     cmd[${this}]: |-
       chmod 755 /var/log/elasticsearch/
