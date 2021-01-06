@@ -9,5 +9,5 @@ actions:
         karaf_credentials="karaf:$karaf_pwd"
         curl -fsI /dev/null -u "$karaf_credentials" http://localhost:80/cxs/privacy/info && exit 0
       fi
-      rc=$? && echo "[ERROR] jCustomer is unavailable, exiting" && exit $rc
+      echo "[ERROR] jCustomer is unavailable, exiting" 1>&2 && exit 1
     user: root
