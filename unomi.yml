@@ -22,6 +22,8 @@ globals:
 ssl: true
 skipNodeEmails: true
 
+mixins:
+  - common/common_actions.yml
 
 onBeforeInstall: |
   var unomiVersion = '${settings.productVersion}'
@@ -119,6 +121,8 @@ onInstall:
   - setupUnomi
   - setupDatadogAgentUnomi: cp
   - setupDatadogAgentEs: es
+  - getReleaseMajorVersion
+  - setEnvVersion: ${globals.envVersion}
 
 onBeforeScaleIn[cp]:
   - saveUnomiRootPassword

@@ -4,10 +4,34 @@ version: 1.5.2
 name: Migrate jCustomer env to v2
 id: migrate-jcustomer-env-v2
 
+# Required for healthchecks
+mixins:
+  - "../../common/common_actions.yml"
+  - "../../jcustomer/jcustomer_actions.yml"
+  - "../../elasticsearch/elasticsearch_actions.yml"
+
+globals:
+  version: 2
+
 onInstall:
+  ### Pre-checks
+  - checkEnvVersion: ${globals.version}
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+
+  - eventsUpdate # PAAS-1234
   - setupDatadogAgentEs: es   # PAAS-1309
 
+  ### Post-actions
+  - setEnvVersion: ${globals.version}
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+
 actions:
+  eventsUpdate:
+    install:
+      jps: "${baseUrl}/../../update.yml"
+
   setupDatadogAgentEs:
     cmd[${this}]: |-
       chmod 755 /var/log/elasticsearch/
