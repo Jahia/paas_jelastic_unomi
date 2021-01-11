@@ -62,12 +62,8 @@ actions:
     - getJahiaVersion
 
     - if('${globals.unomi_version}' >= '1.5'):
-        - if('${globals.jahia_version}' >= '8.0.1.0'):
-            setGlobals:
-              jexperience_version: 1.12.2
-        - else:
-            setGlobals:
-              jexperience_version: 1.12.1
+        setGlobals:
+          jexperience_version: 1.12.2
     - else:
         setGlobals:
           jexperience_version: 1.11.2
