@@ -21,3 +21,80 @@ actions:
         fi
         echo "[ERROR] There is an issue with the cluster, exiting" 1>&2 && exit 1
       user: root
+
+  setupES:
+    cmd[${this}]: |-
+      /usr/share/elasticsearch/bin/elasticsearch --version
+      es_major_version=$(/usr/share/elasticsearch/bin/elasticsearch --version | cut -d"." -f1 | cut -d" " -f2)
+      es_conf=/etc/elasticsearch/elasticsearch.yml
+      ipadd=$(ip a s scope global | awk '$1=="inet" {split($2, ipad, "/"); print ipad[1]}')
+      node_name=$(awk -v ipadd=$ipadd '$1==ipadd && $2~/^es_[0-9]+$/ {print $2; exit}' /etc/hosts)
+      # some cleaning in case of an update
+      sed -e '/^path\.repo/d' \
+          -e '/^node\.name/d' \
+          -e '/^discovery\.zen\./d' \
+          -e '/^discovery\.seed_/d' \
+          -e '/^cluster\.initial_/d' \
+          -i $es_conf
+      sed 's/\(^discovery.type: single-node\)/#\1/' -i $es_conf
+      echo "node.name: $node_name" >> $es_conf
+      hosts_list=$(awk '$2~/^es_[0-9]+$/ {nodes[$2]} END{asorti(nodes);printf "["; for(n=1;n<=length(nodes);n++){if(n<length(nodes)){sep=", "}else{sep="]"}; printf "\"%s\"%s",nodes[n],sep}}' /etc/hosts)
+      discovery_hosts_parameter_name="discovery.zen.ping.unicast.hosts"
+      if [ $es_major_version -ge 7 ]; then
+        discovery_hosts_parameter_name="discovery.seed_hosts"
+        echo "cluster.initial_master_nodes: $hosts_list" >> $es_conf
+      fi
+      echo "$discovery_hosts_parameter_name: $hosts_list" >> $es_conf
+      echo "discovery.zen.minimum_master_nodes: $(expr ${nodes.es.length} / 2 + 1)" >> $es_conf
+      systemctl enable elasticsearch
+      systemctl restart elasticsearch
+
+  setupDatadogAgentEs:
+    cmd[${this}]: |-
+      chmod 755 /var/log/elasticsearch/
+      chmod 755 /var/log/elasticsearch/*.log -R
+      sed -i "s/\(url: http:\/\/\).*\(:.*\)/\1${HOSTNAME}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+      sed -i "s/\(env:\).*\('\)/\1${PACKAGE_TYPE}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
+      mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
+      chown root:root /var/log/jelastic-packages
+      chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
+      wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
+      systemctl restart crond datadog-agent
+
+  updateReplica:
+    - cmd[${nodes.es.first.id}]: |-
+        NODE_HOSTNAME=$(echo "${nodes.es.first.url}" | sed 's/^https:\/\///')
+        curl -s http://${NODE_HOSTNAME}:9200/_cat/indices | awk -v repl=${globals.replica} '$6!=repl {print $3}' | while read index; do
+            curl -s -XPUT http://${NODE_HOSTNAME}:9200/$index/_settings \
+              -H "Content-Type: application/json" \
+              -d '{"index":{"number_of_replicas": ${globals.replica} }}'
+        done
+
+  setReplica:
+    - if(nodes.es.length > 1):
+        - if(nodes.es.length > 4):
+          - setGlobals:
+              - replica: 2
+        - else:
+          - setGlobals:
+              - replica: 1
+    - else:
+        setGlobals:
+          - replica: 0
+    - forEach(nodes.cp):
+        cmd[${@i.id}]: |-
+          setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+          # test if not update needed
+          actual=$(awk -F'=' '/${PRONAME}_ELASTICSEARCH_MONTHLYINDEX_REPLICAS/ {print $NF}' $setenv)
+          if [ ! -z "$actual" ]; then
+            if [ $actual -eq ${globals.replica} ]; then
+              echo "$(hostname) already get the good replica parameters (${globals.replica})"
+              exit 0
+            fi
+          fi
+          # some cleaning in case of an update
+          sed '/^export ${globals.PRONAME}_ELASTICSEARCH/d' -i $setenv
+          echo "export ${globals.PRONAME}_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
+          echo "export ${globals.PRONAME}_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
+          systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
+        user: root
