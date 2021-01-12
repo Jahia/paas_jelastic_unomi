@@ -46,7 +46,7 @@ actions:
         var resp = jelastic.env.control.AddContainerEnvVars('${env.envName}',
           session,
           nodeGroup='cp',
-          vars={'${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS': '${globals.unomi_IPs}'}
+          vars={'UNOMI_HAZELCAST_TCPIP_MEMBERS': '${globals.unomi_IPs}'}
         );
         if (resp.result != 0) return resp;
         return {"result": 0}
@@ -55,18 +55,18 @@ actions:
           sed -i "/<interface>/d" $HAZELCAST_CONFIG
           sed -i "/<member>node/d" $HAZELCAST_CONFIG
           envfile=$(find /opt/jcustomer/jcustomer/bin -name setenv)
-          if (grep -q ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS $envfile); then
+          if (grep -q UNOMI_HAZELCAST_TCPIP_MEMBERS $envfile); then
             sed 's/\(.*HAZELCAST_TCPIP_MEMBERS=\).*/\1${globals.unomi_IPs}/' -i $envfile
           else
-            echo "export ${globals.PRONAME}_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
+            echo "export UNOMI_HAZELCAST_TCPIP_MEMBERS=${globals.unomi_IPs}" >> $envfile
           fi
-          sed -e '/${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS/d' \
-              -e '/${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS/d' \
-              -e '/${globals.PRONAME}_ROOT_PASSWORD/d' \
+          sed -e '/UNOMI_CLUSTER_PUBLIC_ADDRESS/d' \
+              -e '/UNOMI_CLUSTER_INTERNAL_ADDRESS/d' \
+              -e '/UNOMI_ROOT_PASSWORD/d' \
               -i $envfile
-          echo "export ${globals.PRONAME}_CLUSTER_PUBLIC_ADDRESS=${@i.url}" >> $envfile
-          echo "export ${globals.PRONAME}_CLUSTER_INTERNAL_ADDRESS=${@i.url}:9443" >> $envfile
-          echo "export ${globals.PRONAME}_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
+          echo "export UNOMI_CLUSTER_PUBLIC_ADDRESS=${@i.url}" >> $envfile
+          echo "export UNOMI_CLUSTER_INTERNAL_ADDRESS=${@i.url}:9443" >> $envfile
+          echo "export UNOMI_ROOT_PASSWORD=${globals.unomi_root_password}" >> $envfile
           systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
         user: root
     - if ("${response.errOut}" != ""):

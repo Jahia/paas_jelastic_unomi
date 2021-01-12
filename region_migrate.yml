@@ -37,9 +37,9 @@ onInstall:
 actions:
   cleanupKarafConf:
     cmd[cp]: |-
-      sed -e '/${globals.PRONAME}_ROOT_PASSWORD/d' \
+      sed -e '/UNOMI_ROOT_PASSWORD/d' \
           -e '/HAZELCAST_TCPIP_MEMBERS/d' \
-          -e '/${globals.PRONAME}_CLUSTER_\(INTERNAL\|PUBLIC\)_ADDRESS/d' \
+          -e '/UNOMI_CLUSTER_\(INTERNAL\|PUBLIC\)_ADDRESS/d' \
           -i $(find -H /opt/ -mindepth 4  -type f -name setenv)
   getUnomiPwd:
     - cmd[${nodes.cp.master.id}]: |-

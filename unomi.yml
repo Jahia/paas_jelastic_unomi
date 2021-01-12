@@ -181,12 +181,6 @@ onAfterScaleIn[es]:
 onBeforeDelete:
   deleteEnvLink
 
-# -- Actions --
-actions:
-  setSomeGlobals:
-    setGlobals:
-      PRONAME: "UNOMI"
-
 settings:
   fields:
     - name: productVersion
