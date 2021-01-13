@@ -21,8 +21,8 @@ onInstall:
         envLink: ${settings.unomienv}
   - allowIP
   - getUnomiDNSandPwd
-  - updateDX: proc
-  - updateDX: cp
+  - installJexperience: proc
+  - installJexperience: cp
 
 # -- Actions --
 actions:
@@ -62,47 +62,36 @@ actions:
     - getJahiaVersion
 
     - if('${globals.unomi_version}' >= '1.5'):
-        - if('${globals.jahia_version}' >= '8.0.1.0'):
-            setGlobals:
-              module_file: jexperience-1.12.2.jar
-              module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.2/jexperience-1.12.2.jar
-              module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
-        - else:
-            setGlobals:
-              module_file: jexperience-1.12.1.jar
-              module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.12.1/jexperience-1.12.1.jar
-              module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
-    - elif('${globals.unomi_version}' >= '1.4'):
         setGlobals:
-          module_file: jexperience-1.11.2.jar
-          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/1.11.2/jexperience-1.11.2.jar
-          module_conf_file: org.jahia.modules.jexperience.settings-global.cfg
+          jexperience_version: 1.12.2
     - else:
         setGlobals:
-          module_file: marketing-factory-core-1.10.4.jar
-          module_url: https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/marketing-factory-core/1.10.4/marketing-factory-core-1.10.4.jar
-          module_conf_file: org.jahia.modules.marketingfactory.settings-mf.cfg
+          jexperience_version: 1.11.2
 
-  updateDX:
+  installJexperience:
     - cmd[${this}]: |-
-        for mod_file in marketing-factory-core-1.10.4.jar jexperience-1.11.0.jar; do
-          if [ -f /data/digital-factory-data/modules/$mod_file ]; then
-            rm -v /data/digital-factory-data/modules/$mod_file
-          fi
-        done
-        for conf_file in org.jahia.modules.marketingfactory.settings-mf.cfg org.jahia.modules.jexperience.settings-global.cfg; do
-          if [ -f /data/digital-factory-data/karaf/etc/$conf_file ]; then
-            rm -v /data/digital-factory-data/karaf/etc/$conf_file
-          fi
-        done
+        MODULE_FILENAME=jexperience-${globals.jexperience_version}.jar
+        MODULE_PATH="/data/digital-factory-data/modules/$MODULE_FILENAME"
+        MODULE_URL="https://store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/jexperience/${globals.jexperience_version}/jexperience-${globals.jexperience_version}.jar"
+        CONF_FILENAME=org.jahia.modules.jexperience.settings-global.cfg
+        CONF_PATH="/data/digital-factory-data/karaf/etc/$CONF_FILENAME"
+        # Clean up previous jExperience installation (if any)
+        if [ -f "$MODULE_PATH" ]; then
+          rm -v "$MODULE_PATH"
+        fi
+        if [ -f "$CONF_PATH" ]; then
+          rm -v "$CONF_PATH"
+        fi
+        # Set up jExperience configuration
         jcustomer_key=$(sudo cat /root/.secrets/jcustomer.key)
-        wget -qO /data/digital-factory-data/karaf/etc/${globals.module_conf_file} ${baseUrl}/common/${globals.module_conf_file}
-        sed -i 's!\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)URL= http://\).*!\1${globals.unomidns}!' /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
-        sed -i "s,^\# \(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Key=\),\1${jcustomer_key}," /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
-        sed -i 's/\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Password=\)karaf/\1${globals.unomi_pwd}/' /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
-        chown tomcat:tomcat /data/digital-factory-data/karaf/etc/${globals.module_conf_file}
-        wget -qO /data/digital-factory-data/modules/${globals.module_file} ${globals.module_url}
-        chown tomcat:tomcat /data/digital-factory-data/modules/${globals.module_file}
+        wget -qO "$CONF_PATH" "${baseUrl}/common/$CONF_FILENAME"
+        sed -i 's!\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)URL= http://\).*!\1${globals.unomidns}!' "$CONF_PATH"
+        sed -i "s,^\# \(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Key=\),\1${jcustomer_key}," "$CONF_PATH"
+        sed -i 's/\(\(mf\|jexperience\)\.\(unomi\|jCustomer\)Password=\)karaf/\1${globals.unomi_pwd}/' "$CONF_PATH"
+        chown tomcat:tomcat "$CONF_PATH"
+        # Install jExperience module
+        wget -qO "$MODULE_PATH" "$MODULE_URL"
+        chown tomcat:tomcat "$MODULE_PATH"
     - if ("${response.errOut}" != ""):
         - return:
             type: error
