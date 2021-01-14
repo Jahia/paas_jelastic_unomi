@@ -12,6 +12,25 @@ actions:
       echo "[ERROR] jCustomer is unavailable, exiting" 1>&2 && exit 1
     user: root
 
+  saveUnomiRootPassword:
+    - cmd [${nodes.cp.first.id}]: |-
+        setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+        grep UNOMI_ROOT_PASSWORD $setenv | cut -d"=" -f2 | sed 's,\s\+,,g'
+    - environment.control.ApplyNodeGroupData [cp]:
+        data:
+          temp_unomi_root_password: ${response.out}
+
+  getUnomiRootPassword:
+    - script: |-
+        nodeGroups = jelastic.environment.control.getnodegroups("${env.envName}", session)["object"];
+        for (n in nodeGroups) {
+          if (typeof nodeGroups[n]["temp_unomi_root_password"] !== "undefined") {
+            return {"result": 0, "temp_unomi_root_password": nodeGroups[n]["temp_unomi_root_password"]}
+          }
+        }
+    - setGlobals:
+        unomi_root_password: ${response.temp_unomi_root_password}
+
   setupDatadogAgentUnomi:
     forEach(nodes.${this}):
       cmd[${@i.id}]: |-
@@ -21,7 +40,6 @@ actions:
         chown dd-agent: /etc/datadog-agent/conf.d/jelastic.d
         wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/configs/dd_agent_jelastic_package_conf.yml
         systemctl restart datadog-agent
-
 
   getUnomiIPs:
     - script: |
