@@ -7,13 +7,13 @@ description:
   short: Unomi - Region Migrate
 
 mixins:
-  - update.yml
+  - jcustomer/jcustomer_actions.yml
 
 globals:
   - maxtry: 10
 
 onInstall:
-  - log: "Start blabla"
+  - log: "Start region migration"
   - isRegionTargetOK
   - getLinkedEnv
   - disablingKaraf
@@ -25,13 +25,12 @@ onInstall:
   - startEnv
   - waitForState:
       state: running
-  - setSomeGlobals
   - getUnomiPwd
   - cleanupKarafConf
   - setupUnomi
   - if("${globals.linked}" == "true"):
       - update_dx
-  - log: "THIS IS THE END"
+  - log: "Region migration completed successfully"
 
 
 actions:
@@ -176,4 +175,3 @@ settings:
       type: regionlist
       caption: Target Region
       required: true
-      tooltip: bla bla hop la
