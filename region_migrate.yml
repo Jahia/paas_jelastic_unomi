@@ -25,7 +25,6 @@ onInstall:
   - startEnv
   - waitForState:
       state: running
-  - setSomeGlobals
   - getUnomiPwd
   - cleanupKarafConf
   - setupUnomi

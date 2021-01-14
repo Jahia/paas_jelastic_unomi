@@ -114,7 +114,6 @@ onInstall:
         productVersion: ${globals.unomi_version}
         packageType: ${globals.package_type}
   - setJournaldLimit
-  - setSomeGlobals
   - env.control.AddContainerEnvVars [*]:
     vars: {"envName": "${env.envName}", "DATADOGAPIKEY": "${settings.ddogApikey}"}
   - setupES: es
@@ -131,7 +130,6 @@ onBeforeScaleIn[cp]:
 
 onAfterScaleIn[cp]:
   - getUnomiRootPassword
-  - setSomeGlobals
   - updateHazelcast
   - forEach(event.response.nodes):
       - setReplica
@@ -141,7 +139,6 @@ onBeforeServiceScaleOut[cp]:
 
 onAfterServiceScaleOut[cp]:
   - getUnomiRootPassword
-  - setSomeGlobals
   - updateHazelcast
   - forEach(event.response.nodes):
       - setReplica
@@ -152,7 +149,6 @@ onBeforeRedeployContainer[cp]:
 
 onAfterRedeployContainer[cp]:
   - getUnomiRootPassword
-  - setSomeGlobals
   - setReplica
   - setupUnomi
   - setupDatadogAgentUnomi: cp
@@ -166,14 +162,12 @@ onAfterRedeployContainer[es]:
       - setupDatadogAgentEs: ${event.params.nodeId}
 
 onAfterServiceScaleOut[es]:
-  - setSomeGlobals
   - setupES: es
   - setReplica
   - updateReplica
   - setupDatadogAgentEs: es
 
 onAfterScaleIn[es]:
-  - setSomeGlobals
   - setupES: es
   - setReplica
   - updateReplica
