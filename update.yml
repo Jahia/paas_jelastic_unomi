@@ -75,9 +75,9 @@ onAfterScaleIn[es]:
 
 onBeforeDelete:
   - logEvent:
-    target: ${nodes.cp.first.id}
-    title: "Deleting environment $envName"
-    text: "$envName is going to be deleted"
+      target: ${nodes.cp.first.id}
+      title: "Deleting environment $envName"
+      text: "$envName is going to be deleted"
   - deleteEnvLink
 
 
