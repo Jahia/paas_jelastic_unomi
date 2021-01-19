@@ -233,8 +233,8 @@ onAfterRedeployContainer:
       - getLogEventScript: ${event.params.nodeGroup}
       - logEvent:
           target: ${event.params.nodeGroup}
-          title: "${event.params.nodeGroup} nodes has been redeployed to ${event.params.tag} version"
-          text: "${event.params.nodeGroup} nodes has been redeployed to ${event.params.tag} version"
+          title: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
+          text: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
   - elif ('${event.params.nodeId.print()}' != ''):
       - getLogEventScript: ${event.params.nodeId}
       - logEvent:
