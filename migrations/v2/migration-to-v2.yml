@@ -21,9 +21,14 @@ onInstall:
 
   - eventsUpdate # PAAS-1234
   - setupDatadogAgentEs: es   # PAAS-1309
+  - fetchLogEventScript # PAAS-1323
 
   ### Post-actions
   - setEnvVersion: ${globals.version}
+  - logEvent:
+      target: ${nodes.cp.first.id}
+      title: "Environment $envName migrated"
+      text: "Environment $envName migrated to v${globals.version}"
   - checkJcustomerHealth: cp
   - checkElasticsearchHealth: es
 
@@ -46,3 +51,9 @@ actions:
       chown dd-agent:dd-agent /etc/datadog-agent/conf.d/jelastic.d
       wget -qO /etc/datadog-agent/conf.d/jelastic.d/conf.yaml ${baseUrl}/../configs/dd_agent_jelastic_package_conf.yml
       systemctl restart crond datadog-agent
+
+  fetchLogEventScript:
+    cmd[*]: |-
+      wget -qO /usr/local/bin/log_event.sh ${baseUrl}../../scripts/log_events.sh
+      chmod u+x /usr/local/bin/log_event.sh
+    user: root
