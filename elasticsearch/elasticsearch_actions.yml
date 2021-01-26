@@ -98,3 +98,53 @@ actions:
           echo "export UNOMI_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
           systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
         user: root
+
+  setShardAllocation:
+    - if("${this.allocation}" == "primaries"):
+        - set:
+            rule: "\"primaries\""
+    - elif("${this.allocation}" == "null"):
+        - set:
+            rule: "null"
+    - log: "Set cluster.routing.allocation.enable to ${this.rule}"
+    - cmd[${this.target}]: |-
+        curl -s -H 'Content-Type: application/json' -XPUT \
+          -d '{"persistent":{"cluster.routing.allocation.enable": ${this.rule} }}' \
+          http://${HOSTNAME}:9200/_cluster/settings
+
+  forceESFlush:
+    - cmd[${this.target}]: |-
+        [ ! -x /usr/bin/jq ] && yum install -y jq
+
+        es_version=$(curl http://${HOSTNAME}:9200/ -s | jq -r .version.number)
+        if printf '%s\n%s' '7.6.0' "$es_version" | sort -CV; then
+          endpoint="_flush"         # since 7.6.0
+        else
+          endpoint="_flush/synced"  # deprecated since 7.6.0
+        fi
+
+        flush() {
+          failed=$(curl -s -XPOST http://${HOSTNAME}:9200/${endpoint} | jq -r .[].failed | awk '{f=f+$1} END{print f}')
+          if [ $failed -eq 0 ]; then
+            return 0
+          else
+            return 1
+          fi
+        }
+
+        # initiate flush and wait a few
+        curl -s -XPOST http://${HOSTNAME}:9200/${endpoint}
+        sleep 10
+
+        # now check no flush failed
+        maxi=66
+        i=1
+        until flush; do
+          if [ $i -gt $maxi ]; then
+            echo "ES node still have failure(s) on flush, aborting..."
+            exit 1
+          fi
+          echo "flush iteration $i/$maxi"
+          ((i++))
+          sleep 2
+        done

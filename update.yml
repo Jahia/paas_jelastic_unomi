@@ -110,29 +110,56 @@ onAfterMigrate:
     text: "$envName has been migrated"
 
 onBeforeRestartNode:
-  logEvent:
-    target: ${event.params.nodeId}
-    title: "Restarting node ${event.params.nodeId}"
-    text: "${event.params.nodeId} node is going to be restarted"
+  - logEvent:
+      target: ${event.params.nodeId}
+      title: "Restarting node ${event.params.nodeId}"
+      text: "${event.params.nodeId} node is going to be restarted"
+  - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+      - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
+      - setShardAllocation:
+          target: ${event.params.nodeId}
+          allocation: "primaries"
+      - forceESFlush:
+          target: ${event.params.nodeId}
 
 onAfterRestartNode:
-  checkJcustomerHealthWhenStarting: ${event.params.nodeId}
-  logEvent:
-    target: ${event.params.nodeId}
-    title: "Node ${event.params.nodeId} restarted"
-    text: "Node ${event.params.nodeId} has restarted"
+  - checkJcustomerHealthWhenStarting: ${event.params.nodeId}
+  - logEvent:
+      target: ${event.params.nodeId}
+      title: "Node ${event.params.nodeId} restarted"
+      text: "Node ${event.params.nodeId} has restarted"
+  - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+      - log: "This is an ES cluster, enable shards allocation"
+      - setShardAllocation:
+          target: ${event.params.nodeId}
+          allocation: "null"
 
 onBeforeRedeployContainer:
   - if ('${event.params.nodeGroup.print()}' != ''):
-      logEvent:
-        target: ${event.params.nodeGroup}
-        title: "Redeploying ${event.params.nodeGroup} nodes to ${event.params.tag} version"
-        text: "${event.params.nodeGroup} nodes are going to be redeploy to ${event.params.tag} version"
+      - logEvent:
+          target: ${event.params.nodeGroup}
+          title: "Redeploying ${event.params.nodeGroup} nodes to ${event.params.tag} version"
+          text: "${event.params.nodeGroup} nodes are going to be redeploy to ${event.params.tag} version"
+      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+          - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
+          - setShardAllocation:
+              target: ${nodes.es.master.id}
+              allocation: "primaries"
+          - forEach(es):
+              - forceESFlush:
+                  target: ${@i.id}
   - elif ('${event.params.nodeId.print()}' != ''):
-      logEvent:
-        target: ${event.params.nodeId}
-        title: "Redeploying node ${event.params.nodeId} to ${event.params.tag} version"
-        text: "Node ${event.params.nodeId} is going to be redeploy to ${event.params.tag} version"
+      - logEvent:
+          target: ${nodes.es.first.id}
+          title: "Redeploying node ${event.params.nodeId} to ${event.params.tag} version"
+          text: "Node ${event.params.nodeId} is going to be redeploy to ${event.params.tag} version"
+      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+          - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
+          - setShardAllocation:
+              target: ${event.params.nodeId}
+              allocation: "primaries"
+          - forceESFlush:
+              target: ${event.params.nodeId}
 
 onAfterRedeployContainer:
   - if ('${event.params.nodeGroup.print()}' != ''):
@@ -141,12 +168,22 @@ onAfterRedeployContainer:
           target: ${event.params.nodeGroup}
           title: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
           text: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
+      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+          - log: "This is an ES cluster, enable shards allocation"
+          - setShardAllocation:
+              target: ${nodes.es.master.id}
+              allocation: "null"
   - elif ('${event.params.nodeId.print()}' != ''):
       - getLogEventScript: ${event.params.nodeId}
       - logEvent:
           target: ${event.params.nodeId}
           title: "Node ${event.params.nodeId} redeployed to ${event.params.tag} version"
           text: "Node ${event.params.nodeId} has been redeploy to ${event.params.tag} version"
+      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+          - log: "This is an ES cluster, enable shards allocation"
+          - setShardAllocation:
+              target: ${event.params.nodeId}
+              allocation: "null"
 
 onBeforeScaleIn:
   forEach(event.response.nodes):
