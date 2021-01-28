@@ -82,21 +82,19 @@ actions:
         setGlobals:
           - replica: 0
     - forEach(nodes.cp):
-        - cmd[${@i.id}]: |-
-            setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
-            # test if not update needed
-            actual=$(awk -F'=' '/UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS/ {print $NF}' $setenv)
-            if [ ! -z "$actual" ]; then
-              if [ $actual -eq ${globals.replica} ]; then
-                echo "$(hostname) already get the good replica parameters (${globals.replica})"
-                exit 0
-              fi
+        cmd[${@i.id}]: |-
+          setenv=$(find /opt/jcustomer/jcustomer/bin -name setenv)
+          # test if not update needed
+          actual=$(awk -F'=' '/UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS/ {print $NF}' $setenv)
+          if [ ! -z "$actual" ]; then
+            if [ $actual -eq ${globals.replica} ]; then
+              echo "$(hostname) already get the good replica parameters (${globals.replica})"
+              exit 0
             fi
-            # some cleaning in case of an update
-            sed '/^export UNOMI_ELASTICSEARCH/d' -i $setenv
-            echo "export UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
-            echo "export UNOMI_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
-            systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
-          user: root
-        - api: environment.control.RestartNodeById
-          nodeId: ${@i.id}
+          fi
+          # some cleaning in case of an update
+          sed '/^export UNOMI_ELASTICSEARCH/d' -i $setenv
+          echo "export UNOMI_ELASTICSEARCH_MONTHLYINDEX_REPLICAS=${globals.replica}" >> $setenv
+          echo "export UNOMI_ELASTICSEARCH_DEFAULTINDEX_REPLICAS=${globals.replica}" >> $setenv
+          systemctl is-active --quiet karaf && systemctl restart karaf || exit 0
+        user: root
