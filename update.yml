@@ -157,7 +157,8 @@ onBeforeScaleIn:
 
 onAfterServiceScaleOut:
   forEach(event.response.nodes):
-    logEvent:
-      target: ${@i.id}
-      title: "Scaled out ${event.params.nodeGroup} node group"
-      text: "Node ${@i.id} has been added"
+    - getLogEventScript: ${@i.id}
+    - logEvent:
+        target: ${@i.id}
+        title: "Scaled out ${event.params.nodeGroup} node group"
+        text: "Node ${@i.id} has been added"
