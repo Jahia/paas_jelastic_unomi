@@ -153,6 +153,10 @@ onAfterRedeployContainer[cp]:
   - setReplica
   - setupUnomi
   - setupDatadogAgentUnomi: cp
+  - if ('${event.params.nodeGroup.print()}' != ''):
+      checkJcustomerHealthWhenStarting: ${event.params.nodeGroup}
+  - elif ('${event.params.nodeId.print()}' != ''):
+      checkJcustomerHealthWhenStarting: ${event.params.nodeId}
 
 onAfterRedeployContainer[es]:
   - if ('${event.params.nodeGroup.print()}' != ''):
@@ -187,6 +191,7 @@ onBeforeStop:
     text: "$envName is going to stop"
 
 onAfterStart:
+  checkJcustomerHealthWhenStarting: cp
   logEvent:
     target: ${nodes.cp.first.id}
     title: "$envName environment started"
@@ -204,13 +209,14 @@ onAfterMigrate:
     title: "Environment $envName migrated"
     text: "$envName has been migrated"
 
-onBeforeRestartContainer:
+onBeforeRestartNode:
   logEvent:
     target: ${event.params.nodeId}
     title: "Restarting node ${event.params.nodeId}"
     text: "${event.params.nodeId} node is going to be restarted"
 
-onAfterRestartContainer:
+onAfterRestartNode:
+  checkJcustomerHealthWhenStarting: ${event.params.nodeId}
   logEvent:
     target: ${event.params.nodeId}
     title: "Node ${event.params.nodeId} restarted"
