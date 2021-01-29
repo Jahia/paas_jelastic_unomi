@@ -125,6 +125,7 @@ onInstall:
   - setupDatadogAgentEs: es
   - getReleaseMajorVersion
   - setEnvVersion: ${globals.envVersion}
+  - checkJcustomerHealthWhenStarting: cp
 
 onBeforeScaleIn[cp]:
   - saveUnomiRootPassword
