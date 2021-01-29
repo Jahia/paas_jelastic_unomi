@@ -98,12 +98,6 @@ onBeforeInstall: |
 nodes: definedInOnBeforeInstall
 
 # --Events --
-
-onUninstall:
-  cmd [${targetNodes.nodeGroup}]:
-    - sed -i -e 's/.*NOPASSWD.*//g' /etc/sudoers.d/sudo
-  user: root
-
 onInstall:
   - if (settings.rootPassword):
       setGlobals:

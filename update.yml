@@ -21,11 +21,6 @@ mixins:
   - jcustomer/jcustomer_actions.yml
   - elasticsearch/elasticsearch_actions.yml
 
-onUninstall:
-  cmd [${targetNodes.nodeGroup}]:
-    - sed -i -e 's/.*NOPASSWD.*//g' /etc/sudoers.d/sudo
-  user: root
-
 onBeforeScaleIn[cp]:
   - saveUnomiRootPassword
 
