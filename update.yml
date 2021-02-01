@@ -117,8 +117,10 @@ onBeforeRestartNode:
       - forceESFlush:
           target: ${event.params.nodeid}
 
+onAfterRestartNode[cp]:
+  checkJcustomerHealthWhenStarting: ${event.params.nodeid}
+
 onAfterRestartNode:
-  - checkJcustomerHealthWhenStarting: ${event.params.nodeid}
   - logEvent:
       target: ${event.params.nodeid}
       title: "Node ${event.params.nodeid} restarted"
