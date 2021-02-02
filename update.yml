@@ -67,8 +67,8 @@ onAfterRedeployContainer[cp]:
   - setupDatadogAgentUnomi: cp
   - if ('${event.params.nodeGroup.print()}' != ''):
       checkJcustomerHealthWhenStarting: ${event.params.nodeGroup}
-  - elif ('${event.params.nodeid.print()}' != ''):
-      checkJcustomerHealthWhenStarting: ${event.params.nodeid}
+  - elif ('${event.params.nodeId.print()}' != ''):
+      checkJcustomerHealthWhenStarting: ${event.params.nodeId}
 
 onAfterRedeployContainer[es]:
   - if ('${event.params.nodeGroup.print()}' != ''):
@@ -154,7 +154,7 @@ onAfterRestartNode[es]:
           allocation: "null"
 
 onAfterRestartNode[cp]:
-  checkJcustomerHealthWhenStarting: ${event.params.nodeid}
+  checkJcustomerHealthWhenStarting: ${event.params.nodeId}
 
 onAfterRestartNode:
   - logEvent:
