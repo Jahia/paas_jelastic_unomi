@@ -106,18 +106,26 @@ onBeforeDelete:
       text: "$envName is going to be deleted"
   - deleteEnvLink
 
-
 onBeforeStop:
-  logEvent:
-    target: ${nodes.cp.first.id}
-    title: "Stopping environment $envName"
-    text: "$envName is going to stop"
+  - logEvent:
+      target: ${nodes.cp.first.id}
+      title: "Stopping environment $envName"
+      text: "$envName is going to stop"
+  - setShardAllocation:
+      target: ${nodes.es.master.id}
+      allocation: "primaries"
+  - forEach(nodes.es):
+      - forceESFlush:
+          target: ${@i.id}
 
 onAfterStart:
-  logEvent:
-    target: ${nodes.cp.first.id}
-    title: "$envName environment started"
-    text: "$envName is started"
+  - logEvent:
+      target: ${nodes.cp.first.id}
+      title: "$envName environment started"
+      text: "$envName is started"
+  - setShardAllocation:
+      target: ${nodes.es.master.id}
+      allocation: "null"
 
 onBeforeMigrate:
   logEvent:
