@@ -43,6 +43,23 @@ onAfterServiceScaleOut[cp]:
 onBeforeRedeployContainer[cp]:
   - saveUnomiRootPassword
 
+onBeforeRedeployContainer[es]:
+  - if (nodes.es.length > 1):
+      - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
+      - if ('${event.params.nodeGroup.print()}' != ''):
+          - setShardAllocation:
+              target: ${nodes.es.master.id}
+              allocation: "primaries"
+          - forEach(nodes.es):
+              - forceESFlush:
+                  target: ${@i.id}
+      - elif ('${event.params.nodeId.print()}' != ''):
+          - setShardAllocation:
+              target: ${event.params.nodeId}
+              allocation: "primaries"
+          - forceESFlush:
+              target: ${event.params.nodeId}
+
 onAfterRedeployContainer[cp]:
   - getUnomiRootPassword
   - setReplica
@@ -57,9 +74,19 @@ onAfterRedeployContainer[es]:
   - if ('${event.params.nodeGroup.print()}' != ''):
       - setupES: ${event.params.nodeGroup}
       - setupDatadogAgentEs: ${event.params.nodeGroup}
-  - elif ('${event.params.nodeid.print()}' != ''):
-      - setupES: ${event.params.nodeid}
-      - setupDatadogAgentEs: ${event.params.nodeid}
+      - if (nodes.es.length > 1):
+          - log: "This is an ES cluster, enable shards allocation"
+          - setShardAllocation:
+              target: ${nodes.es.master.id}
+              allocation: "null"
+  - elif ('${event.params.nodeId.print()}' != ''):
+      - setupES: ${event.params.nodeId}
+      - setupDatadogAgentEs: ${event.params.nodeId}
+      - if (nodes.es.length > 1):
+          - log: "This is an ES cluster, enable shards allocation"
+          - setShardAllocation:
+              target: ${event.params.nodeId}
+              allocation: "null"
 
 onAfterServiceScaleOut[es]:
   - setupES: es
@@ -109,13 +136,22 @@ onBeforeRestartNode:
       target: ${event.params.nodeid}
       title: "Restarting node ${event.params.nodeid}"
       text: "${event.params.nodeid} node is going to be restarted"
-  - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
+
+onBeforeRestartNode[es]:
+  - if (nodes.es.length > 1):
       - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
       - setShardAllocation:
-          target: ${event.params.nodeid}
+          target: ${event.params.nodeId}
           allocation: "primaries"
       - forceESFlush:
-          target: ${event.params.nodeid}
+          target: ${event.params.nodeId}
+
+onAfterRestartNode[es]:
+  - if (nodes.es.length > 1):
+      - log: "This is an ES cluster, enable shards allocation"
+      - setShardAllocation:
+          target: ${event.params.nodeId}
+          allocation: "null"
 
 onAfterRestartNode[cp]:
   checkJcustomerHealthWhenStarting: ${event.params.nodeid}
@@ -125,38 +161,18 @@ onAfterRestartNode:
       target: ${event.params.nodeid}
       title: "Node ${event.params.nodeid} restarted"
       text: "Node ${event.params.nodeid} has restarted"
-  - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
-      - log: "This is an ES cluster, enable shards allocation"
-      - setShardAllocation:
-          target: ${event.params.nodeid}
-          allocation: "null"
 
 onBeforeRedeployContainer:
   - if ('${event.params.nodeGroup.print()}' != ''):
-      - logEvent:
-          target: ${event.params.nodeGroup}
-          title: "Redeploying ${event.params.nodeGroup} nodes to ${event.params.tag} version"
-          text: "${event.params.nodeGroup} nodes are going to be redeploy to ${event.params.tag} version"
-      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
-          - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
-          - setShardAllocation:
-              target: ${nodes.es.master.id}
-              allocation: "primaries"
-          - forEach(es):
-              - forceESFlush:
-                  target: ${@i.id}
+      logEvent:
+        target: ${event.params.nodeGroup}
+        title: "Redeploying ${event.params.nodeGroup} nodes to ${event.params.tag} version"
+        text: "${event.params.nodeGroup} nodes are going to be redeploy to ${event.params.tag} version"
   - elif ('${event.params.nodeid.print()}' != ''):
-      - logEvent:
-          target: ${nodes.es.first.id}
-          title: "Redeploying node ${event.params.nodeid} to ${event.params.tag} version"
-          text: "Node ${event.params.nodeid} is going to be redeploy to ${event.params.tag} version"
-      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
-          - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
-          - setShardAllocation:
-              target: ${event.params.nodeid}
-              allocation: "primaries"
-          - forceESFlush:
-              target: ${event.params.nodeid}
+      logEvent:
+        target: ${nodes.es.first.id}
+        title: "Redeploying node ${event.params.nodeid} to ${event.params.tag} version"
+        text: "Node ${event.params.nodeid} is going to be redeploy to ${event.params.tag} version"
 
 onAfterRedeployContainer:
   - if ('${event.params.nodeGroup.print()}' != ''):
@@ -165,22 +181,12 @@ onAfterRedeployContainer:
           target: ${event.params.nodeGroup}
           title: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
           text: "${event.params.nodeGroup} nodes have been redeployed to ${event.params.tag} version"
-      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
-          - log: "This is an ES cluster, enable shards allocation"
-          - setShardAllocation:
-              target: ${nodes.es.master.id}
-              allocation: "null"
   - elif ('${event.params.nodeid.print()}' != ''):
       - getLogEventScript: ${event.params.nodeid}
       - logEvent:
           target: ${event.params.nodeid}
           title: "Node ${event.params.nodeid} redeployed to ${event.params.tag} version"
           text: "Node ${event.params.nodeid} has been redeploy to ${event.params.tag} version"
-      - if(event.params.name == "Elasticsearch" && nodes.es.length > 1):
-          - log: "This is an ES cluster, enable shards allocation"
-          - setShardAllocation:
-              target: ${event.params.nodeid}
-              allocation: "null"
 
 onBeforeScaleIn:
   forEach(event.response.nodes):
