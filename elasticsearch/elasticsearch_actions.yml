@@ -108,6 +108,22 @@ actions:
             rule: "null"
     - log: "Set cluster.routing.allocation.enable to ${this.rule}"
     - cmd[${this.target}]: |-
+        # If ${this.rule} is "null" then it's possible that ES daemon is not yet
+        # started so we wait a bit for it
+        if [ "${this.rule}" == "null" ]; then
+          maxi=128
+          i=1
+          until (systemctl -q is-active elasticsearch); do
+            if [ $i -gt $maxi ]; then
+              echo "Elasticsearch is still not started, aborting..."
+              exit 1
+            fi
+            echo "Waiting for ES to be started $i/$maxi"
+            ((i++))
+            sleep 2
+          done
+        fi
+
         curl -s -H 'Content-Type: application/json' -XPUT \
           -d '{"persistent":{"cluster.routing.allocation.enable": ${this.rule} }}' \
           http://${HOSTNAME}:9200/_cluster/settings
