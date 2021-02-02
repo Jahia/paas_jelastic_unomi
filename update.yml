@@ -154,7 +154,7 @@ onAfterRestartNode[es]:
           allocation: "null"
 
 onAfterRestartNode[cp]:
-  checkJcustomerHealthWhenStarting: ${event.params.nodeid}
+  checkJcustomerHealthWhenStarting: ${event.params.nodeId}
 
 onAfterRestartNode:
   - logEvent:
