@@ -226,6 +226,7 @@ onAfterStart:
   - setShardAllocation:
       target: ${nodes.es.master.id}
       allocation: "null"
+  - checkJcustomerHealthWhenStarting: cp
 
 onBeforeMigrate:
   logEvent:
