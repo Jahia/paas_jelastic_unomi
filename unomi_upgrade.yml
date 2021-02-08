@@ -46,6 +46,7 @@ onInstall:
     tag: ${globals.targetDockerTag}
     useExistingVolumes: true
     skipReinstall: false
+    isSequential: false
     envName: ${env.envName}
 
   - script: |-
