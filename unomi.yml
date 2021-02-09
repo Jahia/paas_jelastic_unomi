@@ -13,9 +13,6 @@ description:
     privacy rules (such as GDPR).
 
 globals:
-  datadog_key: ${settings.ddogApikey}
-  shortdomain: ${settings.shortdomain}
-  envname: ${env.envName}
   unomi_version: ${settings.productVersion}
   package_type: dev
   unomi_root_password: ${fn.password(20)}
@@ -56,7 +53,6 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${env.envName}',
       _ROLE: 'unomi',
       _PROVIDE: 'elasticsearch',
       ES_VERSION: esVersion,
@@ -80,7 +76,6 @@ onBeforeInstall: |
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
-      envName: '${env.envName}',
       UNOMI_HTTP_PORT: '80',
       UNOMI_ELASTICSEARCH_ADDRESSES: 'es:' + esPort,
       UNOMI_ELASTICSEARCH_CLUSTERNAME: 'jahia-dx',

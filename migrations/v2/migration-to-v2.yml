@@ -19,9 +19,10 @@ onInstall:
   - checkJcustomerHealth: cp
   - checkElasticsearchHealth: es
 
-  - eventsUpdate # PAAS-1234
-  - setupDatadogAgentEs: es   # PAAS-1309
-  - fetchLogEventScript # PAAS-1323
+  - eventsUpdate                       # PAAS-1234
+  - setupDatadogAgentEs: es            # PAAS-1309
+  - fetchLogEventScript                # PAAS-1323
+  - removeIncorrectValueLinkedEnvVars  # PAAS-1432
 
   ### Post-actions
   - setEnvVersion: ${globals.version}
@@ -57,3 +58,9 @@ actions:
       wget -qO /usr/local/bin/log_event.sh ${baseUrl}../../scripts/log_events.sh
       chmod u+x /usr/local/bin/log_event.sh
     user: root
+
+  removeIncorrectValueLinkedEnvVars:
+    - env.control.RemoveContainerEnvVars[cp]:
+        vars:
+          - ES_ENV_envName
+          - ES_envName
