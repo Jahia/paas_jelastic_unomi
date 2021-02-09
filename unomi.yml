@@ -13,9 +13,6 @@ description:
     privacy rules (such as GDPR).
 
 globals:
-  datadog_key: ${settings.ddogApikey}
-  shortdomain: ${settings.shortdomain}
-  envname: ${env.envName}
   unomi_version: ${settings.productVersion}
   package_type: dev
   unomi_root_password: ${fn.password(20)}
