@@ -4,7 +4,7 @@ source /.jelenv
 
 host_name=$(awk '/^hostname:/ {print $2}' /etc/datadog-agent/datadog.yaml)
 
-curl -X POST "https://api.datadoghq.com/api/v1/events?api_key=${DATADOGAPIKEY}" \
+curl -s -X POST "https://api.datadoghq.com/api/v1/events?api_key=${DATADOGAPIKEY}" \
 -H "Content-Type: application/json" \
 -d @- << EOF
 {
