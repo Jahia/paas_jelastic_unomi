@@ -111,21 +111,25 @@ onBeforeStop:
       target: ${nodes.cp.first.id}
       title: "Stopping environment $envName"
       text: "$envName is going to stop"
-  - setShardAllocation:
-      target: ${nodes.es.master.id}
-      allocation: "primaries"
-  - forEach(nodes.es):
-      - forceESFlush:
-          target: ${@i.id}
+  - if (nodes.es.length > 1):
+      - log: "This is an ES cluster, disable shards allocation and flush before stopping the environment"
+      - setShardAllocation:
+          target: ${nodes.es.master.id}
+          allocation: "primaries"
+      - forEach(nodes.es):
+          - forceESFlush:
+              target: ${@i.id}
 
 onAfterStart:
   - logEvent:
       target: ${nodes.cp.first.id}
       title: "$envName environment started"
       text: "$envName is started"
-  - setShardAllocation:
-      target: ${nodes.es.master.id}
-      allocation: "null"
+  - if (nodes.es.length > 1):
+      - log: "This is an ES cluster, enable shards allocation"
+      - setShardAllocation:
+          target: ${nodes.es.master.id}
+          allocation: "null"
   - checkJcustomerHealthWhenStarting: cp
 
 onBeforeMigrate:
