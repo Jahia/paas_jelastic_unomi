@@ -110,10 +110,13 @@ actions:
     - cmd[${this.target}]: |-
         # If ${this.rule} is "null" then it's possible that ES daemon is not yet
         # started so we wait a bit for it
+        # We check if ES daemon is started with a curl instead of `systemctl is-active`
+        # because there is a lag between the time the service is considered active
+        # and the node is reachable via curl
         if [ "${this.rule}" == "null" ]; then
           maxi=128
           i=1
-          until (systemctl -q is-active elasticsearch); do
+          until (curl -sf "${HOSTNAME}:9200/_cluster/health?timeout=1s" >/dev/null); do
             if [ $i -gt $maxi ]; then
               echo "Elasticsearch is still not started, aborting..."
               exit 1
