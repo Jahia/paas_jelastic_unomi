@@ -36,7 +36,7 @@ onInstall:
       exit 0
 
   - env.control.AddContainerEnvVars[*]:
-    vars: {"UNOMI_VERSION": "${globals.targetDockerTag}", "PACKAGE_TYPE": "${settings.packageType}"}
+    vars: {"UNOMI_VERSION": "${globals.targetDockerTag}"}
   - environment.control.ApplyNodeGroupData [cp, es]:
       data:
         productVersion: ${globals.targetDockerTag}
@@ -96,10 +96,3 @@ settings:
       vtype: text
       required: false
       tooltip: Optional. If you don't specify a version, the current version of the target environment will be selected.
-    - name: packageType
-      type: string
-      caption: Package Type
-      default: dev
-      vtype: text
-      required: true
-      tooltip: Required. Should be "dev" or "prod".

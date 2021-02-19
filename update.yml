@@ -12,7 +12,6 @@ globals:
   shortdomain: ${settings.shortdomain}
   envname: ${env.envName}
   unomi_version: ${settings.productVersion}
-  package_type: dev
 ssl: true
 skipNodeEmails: true
 
