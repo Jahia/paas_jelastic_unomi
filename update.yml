@@ -89,6 +89,10 @@ onAfterRedeployContainer[es]:
               allocation: "null"
 
 onAfterServiceScaleOut[es]:
+  - forEach(event.response.nodes):
+      cmd[${@i.id}]: |-
+        service elasticsearch stop
+        rm -rf /var/lib/elasticsearch/nodes
   - setupES: es
   - setReplica
   - updateReplica
