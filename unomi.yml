@@ -49,6 +49,7 @@ onBeforeInstall: |
     cloudlets: 40,
     nodeGroup: 'es',
     isSLBAccessEnabled: false,
+    startServiceOnCreation: false,
     env: {
       PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
@@ -184,6 +185,10 @@ onAfterRedeployContainer[es]:
               allocation: "null"
 
 onAfterServiceScaleOut[es]:
+  - forEach(event.response.nodes):
+      cmd[${@i.id}]: |-
+        service elasticsearch stop
+        rm -rf /var/lib/elasticsearch/nodes
   - setupES: es
   - setReplica
   - updateReplica
