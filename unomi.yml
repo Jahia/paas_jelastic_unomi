@@ -14,7 +14,6 @@ description:
 
 globals:
   unomi_version: ${settings.productVersion}
-  package_type: dev
   unomi_root_password: ${fn.password(20)}
 ssl: true
 skipNodeEmails: true
@@ -51,7 +50,6 @@ onBeforeInstall: |
     isSLBAccessEnabled: false,
     startServiceOnCreation: false,
     env: {
-      PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
       _ROLE: 'unomi',
@@ -74,7 +72,6 @@ onBeforeInstall: |
     links: 'es:es',
     startServiceOnCreation: false,
     env: {
-      PACKAGE_TYPE: '${globals.package_type}',
       UNOMI_VERSION: unomiVersion,
       jahia_cfg_operatingMode: '${settings.mode}',
       UNOMI_HTTP_PORT: '80',
@@ -102,7 +99,6 @@ onInstall:
       data:
         productName: unomi
         productVersion: ${globals.unomi_version}
-        packageType: ${globals.package_type}
   - setJournaldLimit
   - getLogEventScript: cp, es
   - env.control.AddContainerEnvVars [*]:

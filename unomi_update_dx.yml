@@ -9,7 +9,6 @@ description:
 
 globals:
   shortdomain: ${settings.shortdomain}
-  package_type: dev
 ssl: true
 skipNodeEmails: true
 

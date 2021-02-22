@@ -43,7 +43,6 @@ actions:
       chmod 755 /var/log/elasticsearch/
       chmod 755 /var/log/elasticsearch/*.log -R
       sed -i "s/\(url: http:\/\/\).*\(:.*\)/\1${HOSTNAME}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
-      sed -i "s/\(env:\).*\('\)/\1${PACKAGE_TYPE}\2/" /etc/datadog-agent/conf.d/elastic.d/conf.yaml
       mkdir /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages
       for f in /etc/datadog-agent/conf.d/jelastic.d /var/log/jelastic-packages; do
         [ -d $f ] || mkdir $f

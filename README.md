@@ -49,8 +49,6 @@ This *upgrade* package aims at upgrading jCustomer version by redeploying jCusto
 Parameters are:
 - name: targetVersion
   caption: Target jCustomer Version, if nothing is specified, it will be a simple redeploy
-- name: packageType
-  caption: Package Type
 
 ### unomi_update_dx.yml
 
