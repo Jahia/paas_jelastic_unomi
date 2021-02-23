@@ -61,7 +61,11 @@ onBeforeInstall: |
     },
     "volumes": [
       "/var/lib/elasticsearch"
-    ]
+    ],
+    distribution: {
+      zones: [{hn_type: 'esnodes'}],
+      mode: 'STRICT'
+    }
   }
 
   node_unomi = {
@@ -84,6 +88,10 @@ onBeforeInstall: |
       _PROVIDE: 'unomi',
       ES_VERSION: esVersion,
       envmode: '${settings.mode}'
+    },
+    distribution: {
+      zones: [{hn_type: 'jnodes'}],
+      mode: 'STRICT'
     }
   }
 
