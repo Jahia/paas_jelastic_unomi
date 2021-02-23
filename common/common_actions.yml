@@ -27,7 +27,7 @@ actions:
   setEnvVersion:
     - if (/^[0-9]+$/.test(${this})):
         - script: |
-            return api.env.control.ApplyNodeGroupData("${env.envName}", session, "cp", { envVersion: ${this} });
+            return api.env.control.ApplyNodeGroupData("${env.envName}", session, "es", { envVersion: ${this} });
     - else:
         - log: "The parameter '${this}' is not an integer, nothing to do"
 

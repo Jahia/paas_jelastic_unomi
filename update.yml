@@ -8,40 +8,14 @@ description:
   short: Unomi - Update events
 
 globals:
-  datadog_key: ${settings.ddogApikey}
-  shortdomain: ${settings.shortdomain}
-  envname: ${env.envName}
-  unomi_version: ${settings.productVersion}
+  es_version: 7
   package_type: dev
 ssl: true
 skipNodeEmails: true
 
 mixins:
   - common/common_actions.yml
-  - jcustomer/jcustomer_actions.yml
   - elasticsearch/elasticsearch_actions.yml
-
-onBeforeScaleIn[cp]:
-  - saveUnomiRootPassword
-
-onAfterScaleIn[cp]:
-  - getUnomiRootPassword
-  - updateHazelcast
-  - forEach(event.response.nodes):
-      - setReplica
-
-onBeforeServiceScaleOut[cp]:
-  - saveUnomiRootPassword
-
-onAfterServiceScaleOut[cp]:
-  - getUnomiRootPassword
-  - updateHazelcast
-  - forEach(event.response.nodes):
-      - setReplica
-  - setupDatadogAgentUnomi: cp
-
-onBeforeRedeployContainer[cp]:
-  - saveUnomiRootPassword
 
 onBeforeRedeployContainer[es]:
   - if (nodes.es.length > 1):
@@ -59,16 +33,6 @@ onBeforeRedeployContainer[es]:
               allocation: "primaries"
           - forceESFlush:
               target: ${event.params.nodeId}
-
-onAfterRedeployContainer[cp]:
-  - getUnomiRootPassword
-  - setReplica
-  - setupUnomi
-  - setupDatadogAgentUnomi: cp
-  - if ('${event.params.nodeGroup.print()}' != ''):
-      checkJcustomerHealthWhenStarting: ${event.params.nodeGroup}
-  - elif ('${event.params.nodeId.print()}' != ''):
-      checkJcustomerHealthWhenStarting: ${event.params.nodeId}
 
 onAfterRedeployContainer[es]:
   - if ('${event.params.nodeGroup.print()}' != ''):
@@ -134,7 +98,6 @@ onAfterStart:
       - setShardAllocation:
           target: ${nodes.es.master.id}
           allocation: "null"
-  - checkJcustomerHealthWhenStarting: cp
 
 onBeforeMigrate:
   logEvent:
@@ -148,12 +111,6 @@ onAfterMigrate:
     title: "Environment $envName migrated"
     text: "$envName has been migrated"
 
-onBeforeRestartNode:
-  - logEvent:
-      target: ${event.params.nodeid}
-      title: "Restarting node ${event.params.nodeid}"
-      text: "${event.params.nodeid} node is going to be restarted"
-
 onBeforeRestartNode[es]:
   - if (nodes.es.length > 1):
       - log: "This is an ES cluster, disable shards allocation and flush before stopping node"
@@ -162,6 +119,12 @@ onBeforeRestartNode[es]:
           allocation: "primaries"
       - forceESFlush:
           target: ${event.params.nodeId}
+
+onBeforeRestartNode:
+  - logEvent:
+      target: ${event.params.nodeid}
+      title: "Restarting node ${event.params.nodeid}"
+      text: "${event.params.nodeid} node is going to be restarted"
 
 onAfterRestartNode[es]:
   - if (nodes.es.length > 1):
@@ -214,8 +177,7 @@ onBeforeScaleIn:
 
 onAfterServiceScaleOut:
   forEach(event.response.nodes):
-    - getLogEventScript: ${@i.id}
-    - logEvent:
-        target: ${@i.id}
-        title: "Scaled out ${event.params.nodeGroup} node group"
-        text: "Node ${@i.id} has been added"
+    logEvent:
+      target: ${@i.id}
+      title: "Scaled out ${event.params.nodeGroup} node group"
+      text: "Node ${@i.id} has been added"
