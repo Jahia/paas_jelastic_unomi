@@ -64,33 +64,32 @@ actions:
 
     - getJahiaVersion
 
-    - isVersionBetween:
-        lower: 8.0.2.0
-        lower_may_equal: true
-        higher: 666.666.666.666
-        higher_may_equal: false
-        version: ${globals.jahia_version}
-        res: require_last_jexperience
-    - isVersionBetween:
-        lower: 8.0.0.0
-        lower_may_equal: true
-        higher: 8.0.2.0
-        higher_may_equal: false
-        version: ${globals.jahia_version}
-        res: require_second_last_jexperience
-    - isVersionLower:
+    - isVersionHigher:
         a: ${globals.jahia_version}
-        b: 8.0.0.0
-        res: require_last_jahia7_jexperience
-    - if(${globals.require_last_jexperience}):
+        b: 8.0.2.0
+        res: require_last_jexperience
+    - if(! ${globals.require_last_jexperience}):
+        - isVersionEqual:
+            a: ${globals.jahia_version}
+            b: 8.0.2.0
+            res: require_last_jexperience
+    - if(${globals.require_last_jexperience}):             # globals.jahia_version ≥ 8.0.2.0
         - setGlobals:
             jexperience_version: 1.12.3
-    - elif(${globals.require_second_last_jexperience}):
-        - setGlobals:
-            jexperience_version: 1.12.2
-    - elif(${globals.require_last_jahia7_jexperience}):
-        - setGlobals:
-            jexperience_version: 1.11.4
+    - else:
+        - isVersionBetween:
+            lower: 8.0.0.0
+            lower_may_equal: true
+            higher: 8.0.2.0
+            higher_may_equal: false
+            version: ${globals.jahia_version}
+            res: require_second_last_jexperience
+        - if(${globals.require_second_last_jexperience}):  # 8.0.0.0 ≤ globals.jahia_version < 8.0.2.0
+            - setGlobals:
+                jexperience_version: 1.12.2
+        - else:                                            # globals.jahia_version < 8.0.0.0
+            - setGlobals:
+                jexperience_version: 1.11.4
 
 
   installJexperience:
