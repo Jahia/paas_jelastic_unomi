@@ -1,0 +1,47 @@
+---
+type: update
+version: 1.5.2
+name: Migrate jCustomer env to v3
+id: migrate-jcustomer-env-v3
+
+# Required for healthchecks
+mixins:
+  - "../../common/common_actions.yml"
+  - "../../jcustomer/jcustomer_actions.yml"
+  - "../../elasticsearch/elasticsearch_actions.yml"
+
+globals:
+  version: 3
+
+onInstall:
+  ### Pre-checks
+  - checkEnvVersion: ${globals.version}
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+  - eventsUpdate
+  ### End Pre-checks
+
+  - fixJvmMetrics # PAAS-1478
+
+  ### Post-actions
+  - setEnvVersion: ${globals.version}
+  - logEvent:
+      target: ${nodes.cp.first.id}
+      title: "Environment $envName migrated"
+      text: "Environment $envName migrated to v${globals.version}"
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+  ### End Post-actions
+
+actions:
+  eventsUpdate:
+    install:
+      jps: "${baseUrl}/../../update.yml"
+
+  fixJvmMetrics:
+    - cmd [cp, proc]: |-
+        [ -f /etc/systemd/system/datadog-agent.service.d/override.conf ] && exit 0
+        mkdir -p /etc/systemd/system/datadog-agent.service.d
+        curl -fLSso /etc/systemd/system/datadog-agent.service.d/override.conf ${baseUrl}/dd_agent_service_override.conf || exit 1
+        systemctl daemon-reload && systemctl restart datadog-agent
+      user: root
