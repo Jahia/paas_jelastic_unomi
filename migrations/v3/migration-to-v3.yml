@@ -39,9 +39,12 @@ actions:
 
   installJcustomerCustomCheck:
     cmd[cp]: |-
-      wget -qO /etc/datadog-agent/conf.d/jcustomer_status.yaml ${baseUrl}jcustomer_status.yaml
-      chown dd-agent:dd-agent /etc/datadog-agent/conf.d/jcustomer_status.yaml
+      ln -s /etc/datadog-agent/conf.d/jmx.d/conf.yaml /etc/datadog-agent/conf.d/jcustomer_status.yaml
       wget -qO /etc/datadog-agent/checks.d/jcustomer_status.py ${baseUrl}jcustomer_status.py
       chown dd-agent:dd-agent /etc/datadog-agent/checks.d/jcustomer_status.py
+      # Fix tags on /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i 's/role: server/- "role:server"/g' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i 's/provide : unomi/- "role:unomi"/g' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i '/newT/d' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
       service datadog-agent restart
     user: root

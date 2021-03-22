@@ -1,6 +1,4 @@
-from os import system
 import requests
-import re
 from requests.exceptions import RequestException
 
 # the following try/except block will make the custom check compatible with any Agent version
@@ -14,17 +12,15 @@ except ImportError:
 __version__ = "1.0.0"
 
 
-class CheckNumberBrowsingRemaining(AgentCheck):
-    JCUSTOMER_SETENV_FILE = "/opt/jcustomer/jcustomer/bin/setenv"
+class CheckJcustomerstatus(AgentCheck):
     __NAMESPACE__ = "jcustomer"
     SERVICE_CHECK_NAME = "app_status"
 
     def check(self, instance):
         try:
             # We get the admin page credentials
-            karaf_password = self.__get_karaf_password()
             response = requests.get('http://127.0.0.1/cxs/privacy/info',
-                               auth=("karaf", karaf_password))
+                               auth=(instance["user"], instance["password"]))
 
             if response.status_code != 200:
                 self.__set_error("Received wrong status code " + str(response.status_code))
@@ -52,10 +48,3 @@ class CheckNumberBrowsingRemaining(AgentCheck):
             AgentCheck.CRITICAL,
             message='JCustomer is not running or not ready: ' + error
         )
-
-    def __get_karaf_password(self):
-        with open(self.JCUSTOMER_SETENV_FILE) as set_env_file:
-            for line in set_env_file:
-                if line.find('UNOMI_ROOT_PASSWORD') != -1:
-                    return line.split("=")[-1].rstrip('\n')
-        return "FAIL"
