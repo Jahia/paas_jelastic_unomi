@@ -21,6 +21,7 @@ onInstall:
   #- eventsUpdate
 
   - installJcustomerCustomCheck # PAAS-1422
+  - addJelasticExposeEnvVar     # PAAS-1453
 
   ### Post-actions
   - setEnvVersion: ${globals.version}
@@ -48,3 +49,7 @@ actions:
       sed -i '/newT/d' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
       service datadog-agent restart
     user: root
+
+  addJelasticExposeEnvVar:
+    - env.control.AddContainerEnvVars[*]:
+        vars: {"JELASTIC_EXPOSE": "0"}
