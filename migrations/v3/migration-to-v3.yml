@@ -1,0 +1,50 @@
+---
+type: update
+version: 1.5.2
+name: Migrate jCustomer env to v3
+id: migrate-jcustomer-env-v3
+
+# Required for healthchecks
+mixins:
+  - "../../common/common_actions.yml"
+  - "../../jcustomer/jcustomer_actions.yml"
+  - "../../elasticsearch/elasticsearch_actions.yml"
+
+globals:
+  version: 3
+
+onInstall:
+  ### Pre-checks
+  - checkEnvVersion: ${globals.version}
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+  #- eventsUpdate
+
+  - installJcustomerCustomCheck # PAAS-1422
+
+  ### Post-actions
+  - setEnvVersion: ${globals.version}
+  - logEvent:
+      target: ${nodes.cp.first.id}
+      title: "Environment $envName migrated"
+      text: "Environment $envName migrated to v${globals.version}"
+  - checkJcustomerHealth: cp
+  - checkElasticsearchHealth: es
+
+actions:
+  eventsUpdate:
+    install:
+      jps: "${baseUrl}/../../update.yml"
+
+
+  installJcustomerCustomCheck:
+    cmd[cp]: |-
+      ln -s /etc/datadog-agent/conf.d/jmx.d/conf.yaml /etc/datadog-agent/conf.d/jcustomer_status.yaml
+      wget -qO /etc/datadog-agent/checks.d/jcustomer_status.py ${baseUrl}jcustomer_status.py
+      chown dd-agent:dd-agent /etc/datadog-agent/checks.d/jcustomer_status.py
+      # Fix tags on /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i 's/role: server/- "role:server"/g' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i 's/provide : unomi/- "role:unomi"/g' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      sed -i '/newT/d' /etc/datadog-agent/conf.d/jmx.d/conf.yaml
+      service datadog-agent restart
+    user: root
