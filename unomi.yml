@@ -81,6 +81,12 @@ onBeforeInstall: |
       _PROVIDE: 'unomi',
       ES_VERSION: esVersion,
       envmode: '${settings.mode}'
+    },
+    "distribution": {
+        "mode": "STRICT",
+        "zones": [
+            {high_iops: false}
+        ]
     }
   }
 
